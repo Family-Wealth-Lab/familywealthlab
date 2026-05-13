@@ -4,47 +4,61 @@ import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, Lock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { HeroDashboard } from "./HeroDashboard";
-import { fadeUp, t } from "@/lib/motion";
+import { AmbientMesh, Spotlight } from "@/components/ui/AmbientMesh";
+import { Magnetic } from "@/components/ui/MagneticButton";
+import { heroIn, fadeUp, t } from "@/lib/motion";
+
+const SIDE_RAIL = [
+  { label: "PATHS", value: "5,000", delta: "MONTE CARLO" },
+  { label: "HORIZON", value: "20Y", delta: "FY26 → FY46" },
+  { label: "P10",   value: "$2.94M", delta: "10TH PCT" },
+  { label: "P50",   value: "$4.82M", delta: "MEDIAN" },
+  { label: "P90",   value: "$7.40M", delta: "90TH PCT" },
+  { label: "TAX",   value: "FY26",   delta: "AU RULES" },
+];
 
 export function Hero() {
   return (
     <section
       id="top"
-      className="relative isolate pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden bg-silver"
+      className="relative isolate pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden"
     >
-      {/* Very faint dot grid + soft top spotlight */}
-      <div className="absolute inset-0 grid-faint mask-fade-y opacity-50 pointer-events-none" aria-hidden />
-      <div className="absolute inset-0 spotlight pointer-events-none" aria-hidden />
+      {/* Layered atmosphere — mesh + grid + spotlight */}
+      <AmbientMesh />
+      <div className="absolute inset-0 grid-fine mask-fade-y opacity-[0.35] pointer-events-none -z-10" aria-hidden />
+      <Spotlight />
 
       <div className="container mx-auto relative">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-14 items-center">
-          {/* Copy */}
-          <div className="lg:col-span-7 max-w-2xl">
+        <div className="grid lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+          {/* Copy — 6 cols */}
+          <div className="lg:col-span-6 max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={t.short}
               className="chip text-ink-tertiary"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />
-              Private preview · Australia
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-ember-500 animate-pulse-soft" />
+              <span className="mono text-[0.7rem] tracking-wider">PRIVATE PREVIEW · AU · FY26</span>
             </motion.div>
 
             <motion.h1
-              variants={fadeUp}
+              variants={heroIn}
               initial="hidden"
               animate="visible"
-              transition={{ ...t.long, delay: 0.05 }}
-              className="mt-7 text-display-lg text-ink-primary text-balance"
+              className="mt-7 text-display-lg text-ink-primary text-balance tracking-tightest"
             >
-              The wealth operating system for serious households.
+              The wealth <span className="relative inline-block">
+                operating system
+                <span aria-hidden className="absolute left-0 -bottom-1 w-full h-[2px] bg-gradient-to-r from-ember-500/0 via-ember-500 to-ember-500/0" />
+              </span> for serious households.
             </motion.h1>
 
             <motion.p
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              transition={{ ...t.long, delay: 0.12 }}
+              transition={{ ...t.long, delay: 0.18 }}
               className="mt-6 text-lead text-ink-tertiary max-w-xl text-pretty"
             >
               Forecast outcomes, model decisions, and act on intelligent signals —
@@ -55,13 +69,15 @@ export function Hero() {
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              transition={{ ...t.long, delay: 0.2 }}
+              transition={{ ...t.long, delay: 0.28 }}
               className="mt-9 flex flex-wrap items-center gap-3"
             >
-              <Button size="lg" variant="primary">
-                Request access
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              <Magnetic strength={0.28}>
+                <Button size="lg" variant="primary">
+                  Request access
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Magnetic>
               <Button size="lg" variant="secondary">
                 See the platform
               </Button>
@@ -71,7 +87,7 @@ export function Hero() {
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              transition={{ ...t.long, delay: 0.28 }}
+              transition={{ ...t.long, delay: 0.36 }}
               className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-caption text-ink-quaternary"
             >
               <span className="inline-flex items-center gap-1.5">
@@ -81,39 +97,68 @@ export function Hero() {
                 <ShieldCheck className="h-3.5 w-3.5" /> You own your data
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" /> Built for Australian tax & super
+                <MapPin className="h-3.5 w-3.5" /> Australian tax &amp; super
               </span>
             </motion.div>
           </div>
 
-          {/* Dashboard */}
+          {/* Dashboard — 5 cols */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="lg:col-span-5"
           >
             <HeroDashboard />
           </motion.div>
+
+          {/* Side rail — monospace data column, 1 col on xl */}
+          <motion.aside
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
+            className="hidden xl:flex lg:col-span-1 flex-col gap-3 self-start mt-2"
+            aria-label="Model parameters"
+          >
+            <span className="syslabel">
+              <span className="mono text-ember-500">[02]</span>
+              <span>MODEL</span>
+            </span>
+            <div className="flex flex-col gap-1 text-[0.7rem] mono">
+              {SIDE_RAIL.map((r) => (
+                <div key={r.label} className="flex flex-col py-1.5 border-b border-line/60">
+                  <span className="text-ink-quaternary">{r.label}</span>
+                  <span className="text-ink-primary text-[0.8rem]">{r.value}</span>
+                  <span className="text-[0.65rem] text-ink-quinary">{r.delta}</span>
+                </div>
+              ))}
+            </div>
+          </motion.aside>
         </div>
 
-        {/* Logo strip */}
-        <div className="mt-24 lg:mt-32 hairline pt-10">
-          <p className="text-eyebrow uppercase text-ink-quaternary text-center">
-            Designed around the realities of Australian household finance
+        {/* Logo strip — denser, monospace, ember dot */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.6 }}
+          className="mt-20 lg:mt-24 pt-8 border-t border-line"
+        >
+          <p className="syslabel justify-center text-center">
+            <span className="mono text-ember-500">[03]</span>
+            <span>DESIGNED AROUND AUSTRALIAN HOUSEHOLD FINANCE</span>
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-body-sm text-ink-tertiary">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[0.75rem] text-ink-tertiary mono uppercase tracking-wider">
             <span>Negative gearing</span>
-            <span className="h-1 w-1 rounded-full bg-ink-quinary" />
-            <span>Div 293 modelling</span>
-            <span className="h-1 w-1 rounded-full bg-ink-quinary" />
-            <span>APRA serviceability buffer</span>
-            <span className="h-1 w-1 rounded-full bg-ink-quinary" />
-            <span>Super preservation age</span>
-            <span className="h-1 w-1 rounded-full bg-ink-quinary" />
-            <span>FY26 tax rules</span>
+            <span className="h-1 w-1 rounded-full bg-ember-500/60" />
+            <span>Div 293</span>
+            <span className="h-1 w-1 rounded-full bg-ember-500/60" />
+            <span>APRA 3% buffer</span>
+            <span className="h-1 w-1 rounded-full bg-ember-500/60" />
+            <span>Super preservation</span>
+            <span className="h-1 w-1 rounded-full bg-ember-500/60" />
+            <span>FY26 rules</span>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,22 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-sans",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://familywealthlab.com"),
   title: {
-    default: "Family Wealth Lab — Engineer Your Family's Financial Future",
+    default: "Family Wealth Lab — The wealth operating system",
     template: "%s · Family Wealth Lab",
   },
   description:
-    "An AI-powered family financial operating system. Forecasting, FIRE planning, property strategy, debt optimization, and decision intelligence for Australian families.",
+    "Forecast outcomes, model decisions, and act on intelligent signals — the wealth operating system for serious Australian households.",
   keywords: [
     "family wealth",
     "financial planning",
@@ -28,9 +35,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Family Wealth Lab" }],
   openGraph: {
-    title: "Family Wealth Lab — Engineer Your Family's Financial Future",
+    title: "Family Wealth Lab — The wealth operating system",
     description:
-      "AI-powered forecasting, property strategy, FIRE planning, and financial intelligence for Australian families.",
+      "AI-powered forecasting, property strategy, FIRE planning, and decision intelligence for Australian families.",
     type: "website",
     locale: "en_AU",
   },
@@ -39,27 +46,20 @@ export const metadata: Metadata = {
     title: "Family Wealth Lab",
     description: "The operating system for family wealth.",
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#070B14",
+  themeColor: "#F4F5F7",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU" className={`${inter.variable} dark`}>
-      <body className="bg-bg-base text-ink-100 font-sans">
+    <html lang="en-AU" className={`${inter.variable} ${jetbrains.variable}`}>
+      <body className="bg-bg-base text-ink-secondary font-sans">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
     </html>

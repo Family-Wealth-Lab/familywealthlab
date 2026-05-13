@@ -1,35 +1,49 @@
 "use client";
 import * as React from "react";
-import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
-import { Eyebrow, Section } from "@/components/ui/Section";
+import { AnimatePresence, motion } from "framer-motion";
+import { Section, SystemLabel } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
-import { Wallet, LineChart, GitBranch, Sparkles } from "lucide-react";
+import { ChartLine } from "@/components/ui/ChartLine";
+import { Wallet, LineChart, GitBranch, Sparkles, ArrowRight } from "lucide-react";
 
-const MODULES = [
+type Module = {
+  idx: string;
+  title: string;
+  short: string;
+  body: string;
+  bullets: string[];
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const MODULES: Module[] = [
   {
-    eyebrow: "Module 01",
+    idx: "01",
     title: "Net Worth Engine",
+    short: "Net Worth",
     body: "Every asset and liability — cash, property, super, equities — collapsed into one continuously reconciled household model.",
     bullets: ["Live asset & liability roll-up", "Daily reconciliation", "Per-member views"],
     icon: Wallet,
   },
   {
-    eyebrow: "Module 02",
+    idx: "02",
     title: "Forecast Engine",
+    short: "Forecast",
     body: "Monte Carlo projections across 5,000 paths model your true range of outcomes — not a single fragile straight line.",
     bullets: ["P10 / P50 / P90 bands", "20-year horizon", "Stress-tested to rate shocks"],
     icon: LineChart,
   },
   {
-    eyebrow: "Module 03",
+    idx: "03",
     title: "Decision Engine",
+    short: "Decisions",
     body: "Run any household decision — buy, refinance, retire, restructure — against your own real numbers in seconds.",
     bullets: ["Scenario comparison", "Tax-aware modelling", "Decision audit trail"],
     icon: GitBranch,
   },
   {
-    eyebrow: "Module 04",
+    idx: "04",
     title: "AI Insights",
+    short: "Intelligence",
     body: "A quiet intelligence layer reads your model continuously and surfaces only the decisions worth your attention this month.",
     bullets: ["Continuous opportunity scan", "Plain-English explanations", "Tax & cashflow flags"],
     icon: Sparkles,
@@ -37,198 +51,220 @@ const MODULES = [
 ];
 
 export function CommandCenter() {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const segment = 1 / MODULES.length;
-  const activeIndex = useTransform(scrollYProgress, (v) => Math.min(MODULES.length - 1, Math.floor(v / segment)));
+  const [active, setActive] = React.useState(0);
+  const M = MODULES[active];
+  const Icon = M.icon;
 
   return (
-    <section id="command" ref={ref} className="relative">
-      <div className="container mx-auto pt-28 sm:pt-36 pb-10">
-        <Reveal className="max-w-2xl">
-          <Eyebrow>The platform</Eyebrow>
-          <h2 className="mt-5 text-display text-ink-primary text-balance">
-            Four engines. One coherent surface.
-          </h2>
-          <p className="mt-5 text-lead text-ink-tertiary text-pretty max-w-xl">
-            Family Wealth Lab is built from four tightly-integrated modules — each
-            doing one thing exceptionally well, then composing into a single
-            decision surface.
-          </p>
-        </Reveal>
+    <Section spacing="lg" id="command">
+      <Reveal className="max-w-3xl">
+        <SystemLabel index="06" label="THE PLATFORM" />
+        <h2 className="mt-4 text-display text-ink-primary text-balance tracking-tighter">
+          Four engines. <span className="text-ember-500">One coherent surface.</span>
+        </h2>
+        <p className="mt-5 text-lead text-ink-tertiary text-pretty max-w-2xl">
+          Family Wealth Lab is built from four tightly-integrated modules — each
+          doing one thing exceptionally well, then composing into a single
+          decision surface.
+        </p>
+      </Reveal>
+
+      {/* Tab strip */}
+      <div className="mt-12 flex flex-wrap items-stretch gap-1.5 border-b border-line pb-0">
+        {MODULES.map((m, i) => {
+          const isActive = i === active;
+          const TabIcon = m.icon;
+          return (
+            <button
+              key={m.idx}
+              onClick={() => setActive(i)}
+              className={`relative group inline-flex items-center gap-2.5 px-3.5 py-3 rounded-t-md text-left transition-colors duration-300 focus-ring ${
+                isActive
+                  ? "bg-white border border-line border-b-white text-ink-primary -mb-px"
+                  : "text-ink-tertiary hover:text-ink-primary"
+              }`}
+            >
+              <span className={`inline-flex h-7 w-7 items-center justify-center rounded-md border ${isActive ? "border-ember-500/40 text-ember-500" : "border-line text-ink-tertiary"} bg-bg-inset`}>
+                <TabIcon className="h-3.5 w-3.5" />
+              </span>
+              <span className="flex flex-col leading-tight">
+                <span className="text-[0.65rem] mono uppercase tracking-wider text-ink-quaternary">
+                  [{m.idx}]
+                </span>
+                <span className="text-body-sm font-medium">{m.short}</span>
+              </span>
+              {isActive && (
+                <motion.span
+                  layoutId="module-tab-underline"
+                  className="absolute left-3 right-3 -bottom-px h-[2px] bg-ember-500"
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Sticky-scroll stage */}
-      <div className="relative" style={{ height: `${MODULES.length * 110}vh` }}>
-        <div className="sticky top-0 h-screen flex items-center">
-          <div className="container mx-auto w-full">
-            <div className="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              {/* Left rail — progress + copy */}
-              <div className="lg:col-span-5">
-                <ProgressRail activeIndex={activeIndex} />
-                <div className="relative mt-8 min-h-[280px]">
-                  {MODULES.map((m, i) => (
-                    <ModuleCopy key={i} m={m} i={i} activeIndex={activeIndex} />
-                  ))}
-                </div>
-              </div>
-
-              {/* Right — visualization */}
-              <div className="lg:col-span-7">
-                <div className="relative aspect-[4/3] sm:aspect-[5/3.5]">
-                  {MODULES.map((m, i) => (
-                    <ModuleVisual key={i} index={i} activeIndex={activeIndex} />
-                  ))}
-                </div>
-              </div>
+      {/* Module body — grid copy / visual */}
+      <div className="relative mt-10 grid lg:grid-cols-12 gap-10 lg:gap-12 items-start min-h-[420px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`copy-${active}`}
+            initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-5"
+          >
+            <div className="inline-flex items-center gap-2.5">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-bg-inset text-ember-500">
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="syslabel">
+                <span className="mono text-ember-500">[{M.idx}]</span>
+                <span>MODULE</span>
+              </span>
             </div>
-          </div>
-        </div>
+            <h3 className="mt-5 text-h2 text-ink-primary tracking-tight">{M.title}</h3>
+            <p className="mt-4 text-body-lg text-ink-tertiary max-w-md text-pretty">{M.body}</p>
+            <ul className="mt-7 flex flex-col gap-2.5">
+              {M.bullets.map((b) => (
+                <li key={b} className="flex items-start gap-2.5 text-body-sm text-ink-secondary">
+                  <span className="mt-[7px] h-[5px] w-[5px] rounded-full bg-ember-500 shrink-0" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#"
+              className="mt-7 inline-flex items-center gap-1.5 text-body-sm text-ink-primary hover:text-ember-500 transition-colors group"
+            >
+              <span className="mono text-[0.7rem] text-ember-500">[{M.idx}.OPEN]</span>
+              <span>Explore module</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </a>
+          </motion.div>
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`vis-${active}`}
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.99, y: -6 }}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-7"
+          >
+            {active === 0 && <VisualNetWorth />}
+            {active === 1 && <VisualForecast />}
+            {active === 2 && <VisualDecision />}
+            {active === 3 && <VisualAI />}
+          </motion.div>
+        </AnimatePresence>
       </div>
-    </section>
+    </Section>
   );
 }
 
-function ProgressRail({ activeIndex }: { activeIndex: MotionValue<number> }) {
-  const [idx, setIdx] = React.useState(0);
-  React.useEffect(() => activeIndex.on("change", (v) => setIdx(Math.round(v))), [activeIndex]);
-  return (
-    <div className="flex items-center gap-2">
-      {MODULES.map((_, i) => (
-        <span
-          key={i}
-          className={`h-[2px] rounded-full transition-all duration-500 ease-calm ${
-            i <= idx ? "bg-accent-500 w-10" : "bg-line w-5"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ModuleCopy({
-  m,
-  i,
-  activeIndex,
-}: {
-  m: (typeof MODULES)[number];
-  i: number;
-  activeIndex: MotionValue<number>;
-}) {
-  const opacity = useTransform(activeIndex, (v) => {
-    const dist = Math.abs(v - i);
-    return dist < 0.5 ? 1 : Math.max(0, 1 - (dist - 0.5) * 2);
-  });
-  const y = useTransform(activeIndex, (v) => (v - i) * -10);
-  const Icon = m.icon;
-  return (
-    <motion.div style={{ opacity, y }} className="absolute inset-0">
-      <div className="inline-flex items-center gap-2.5">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-bg-inset text-accent-500">
-          <Icon className="h-4 w-4" />
-        </span>
-        <span className="text-eyebrow uppercase text-ink-quaternary">{m.eyebrow}</span>
-      </div>
-      <h3 className="mt-5 text-h2 text-ink-primary">{m.title}</h3>
-      <p className="mt-4 text-body-lg text-ink-tertiary max-w-md text-pretty">{m.body}</p>
-      <ul className="mt-6 flex flex-col gap-2.5">
-        {m.bullets.map((b) => (
-          <li key={b} className="flex items-start gap-2.5 text-body-sm text-ink-secondary">
-            <span className="mt-[7px] h-[5px] w-[5px] rounded-full bg-accent-500 shrink-0" />
-            {b}
-          </li>
-        ))}
-      </ul>
-    </motion.div>
-  );
-}
-
-function ModuleVisual({ index, activeIndex }: { index: number; activeIndex: MotionValue<number> }) {
-  const opacity = useTransform(activeIndex, (v) => {
-    const dist = Math.abs(v - index);
-    return dist < 0.5 ? 1 : Math.max(0, 1 - (dist - 0.5) * 2.5);
-  });
-  const scale = useTransform(activeIndex, (v) => 1 - Math.abs(v - index) * 0.02);
-  return (
-    <motion.div style={{ opacity, scale }} className="absolute inset-0">
-      {index === 0 && <VisualNetWorth />}
-      {index === 1 && <VisualForecast />}
-      {index === 2 && <VisualDecision />}
-      {index === 3 && <VisualAI />}
-    </motion.div>
-  );
-}
-
-/* ── Visualizations ──────────────────────────────────────────── */
+/* ─── Visualizations ─────────────────────────────────────────── */
 
 function VisualNetWorth() {
   return (
-    <div className="card-surface p-6 h-full shadow-elevated flex flex-col">
+    <div className="card-cinematic p-6">
       <div className="flex items-center justify-between">
-        <span className="text-eyebrow uppercase text-ink-quaternary">Household</span>
-        <span className="text-caption text-positive flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-positive" /> Live
+        <span className="syslabel">
+          <span className="mono text-ember-500">[01]</span>
+          <span>HOUSEHOLD ROLL-UP</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-caption text-positive mono">
+          <span className="h-1.5 w-1.5 rounded-full bg-positive animate-pulse-soft" /> LIVE
         </span>
       </div>
       <div className="mt-4 flex items-baseline gap-3">
-        <span className="text-display text-ink-primary num">$2.41M</span>
-        <span className="text-body-sm text-positive num">+$184K YoY</span>
+        <span className="text-display text-ink-primary mono tracking-tightest">$2.41M</span>
+        <span className="text-body-sm text-positive mono">+$184K YoY</span>
       </div>
-      <div className="mt-6 grid grid-cols-4 gap-2.5 text-caption">
-        {[
-          ["Cash", "$58K"],
-          ["Property", "$1.42M"],
-          ["Super", "$420K"],
-          ["Invested", "$512K"],
-        ].map(([k, v]) => (
-          <div key={k} className="rounded-md border border-line bg-bg-inset p-3">
-            <p className="text-eyebrow uppercase text-ink-quaternary">{k}</p>
-            <p className="mt-1 text-body-sm text-ink-primary num">{v}</p>
-          </div>
-        ))}
+      <p className="mt-1.5 text-caption text-ink-quaternary mono uppercase tracking-wider">
+        14 SOURCES · LAST SYNC 12:42
+      </p>
+
+      {/* Composition bar */}
+      <div className="mt-6">
+        <div className="flex h-2 w-full rounded-full overflow-hidden border border-line">
+          <div className="bg-ink-primary" style={{ width: "59%" }} />
+          <div className="bg-graphite-500" style={{ width: "21%" }} />
+          <div className="bg-graphite-300" style={{ width: "17%" }} />
+          <div className="bg-ember-500" style={{ width: "3%" }} />
+        </div>
+        <div className="mt-3 grid grid-cols-4 gap-2 text-caption">
+          {[
+            ["PROPERTY", "$1.42M", "59%", "bg-ink-primary"],
+            ["INVESTED", "$512K", "21%", "bg-graphite-500"],
+            ["SUPER", "$420K", "17%", "bg-graphite-300"],
+            ["CASH", "$58K", "3%", "bg-ember-500"],
+          ].map(([k, v, pct, dot]) => (
+            <div key={k} className="rounded-md border border-line bg-bg-inset px-2.5 py-2">
+              <div className="flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                <p className="text-[0.6rem] uppercase text-ink-quaternary mono tracking-wider">{k}</p>
+              </div>
+              <p className="mt-0.5 text-body-sm text-ink-primary mono">{v}</p>
+              <p className="text-[0.6rem] text-ink-quinary mono">{pct}</p>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mt-auto pt-6 hairline">
-        <p className="text-caption text-ink-quaternary">Sources reconciled: 14 · Last sync 12:42</p>
+
+      <div className="mt-5 pt-5 hairline grid grid-cols-2 gap-3 text-caption">
+        <Stat k="LIQUIDITY" v="$58K" tone="neutral" />
+        <Stat k="DEBT/EQUITY" v="0.46" tone="positive" />
       </div>
     </div>
   );
 }
 
 function VisualForecast() {
+  const p50 = [2.41, 2.6, 2.85, 3.15, 3.5, 3.9, 4.35, 4.82];
+  const p10 = [2.41, 2.5, 2.6, 2.72, 2.8, 2.88, 2.94, 2.94];
+  const p90 = [2.41, 2.75, 3.18, 3.7, 4.32, 5.05, 6.2, 7.4];
   return (
-    <div className="card-surface p-6 h-full shadow-elevated flex flex-col">
+    <div className="card-cinematic p-6">
       <div className="flex items-center justify-between">
-        <span className="text-eyebrow uppercase text-ink-quaternary">Forecast · 20y</span>
-        <span className="text-caption text-ink-tertiary num">5,000 paths</span>
+        <span className="syslabel">
+          <span className="mono text-ember-500">[02]</span>
+          <span>FORECAST · 20Y · 5,000 PATHS</span>
+        </span>
+        <span className="text-caption text-ink-tertiary mono">P50 2045</span>
       </div>
       <div className="mt-3 flex items-baseline gap-3">
-        <span className="text-h2 text-ink-primary num">$4.82M</span>
-        <span className="text-caption text-ink-quaternary num">P50 by 2045</span>
+        <span className="text-h2 text-ink-primary mono">$4.82M</span>
+        <span className="text-caption text-ink-quaternary mono">P10 $2.94M · P90 $7.40M</span>
       </div>
-      <div className="mt-5 flex-1 rounded-md border border-line bg-bg-inset p-4">
-        <svg viewBox="0 0 600 220" className="w-full h-full">
-          <g stroke="rgba(60,60,67,0.10)" strokeWidth="1">
-            {[40, 90, 140, 190].map((y) => (
-              <line key={y} x1="0" y1={y} x2="600" y2={y} />
-            ))}
-          </g>
-          <path
-            d="M0,170 C100,150 200,128 300,100 C400,72 500,52 600,36 L600,90 C500,90 400,104 300,118 C200,132 100,158 0,178 Z"
-            fill="rgba(62,106,149,0.10)"
-          />
-          <path
-            d="M0,174 C100,156 200,134 300,108 C400,82 500,62 600,46"
-            fill="none"
-            stroke="#3E6A95"
-            strokeWidth="1.75"
-          />
-        </svg>
+      <div className="mt-5 rounded-lg border border-line bg-bg-inset/60 p-4">
+        <ChartLine
+          data={p50}
+          bandLow={p10}
+          bandHigh={p90}
+          stroke="#0B0F1A"
+          fill="rgba(52, 70, 106, 0.10)"
+          height={200}
+          width={560}
+          showAxis
+          axisLabels={["2026", "2031", "2036", "2041", "2045"]}
+          className="w-full h-44"
+        />
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2.5 text-caption">
-        {[["P10", "$3.1M"], ["P50", "$4.82M"], ["P90", "$7.4M"]].map(([k, v]) => (
-          <div key={k} className="rounded-md border border-line bg-bg-inset p-3">
-            <p className="text-eyebrow uppercase text-ink-quaternary">{k}</p>
-            <p className="mt-1 text-body-sm text-ink-primary num">{v}</p>
+      <div className="mt-5 grid grid-cols-3 gap-2.5 text-caption">
+        {[
+          ["P10", "$2.94M", "neg"],
+          ["P50", "$4.82M", "neu"],
+          ["P90", "$7.40M", "pos"],
+        ].map(([k, v, t]) => (
+          <div key={k} className="rounded-md border border-line bg-bg-inset px-3 py-2.5">
+            <p className="text-[0.6rem] uppercase text-ink-quaternary mono tracking-wider">{k}</p>
+            <p className="mt-0.5 text-h4 text-ink-primary mono">{v}</p>
+            <p className={`text-[0.65rem] mono ${t === "pos" ? "text-positive" : t === "neg" ? "text-warning" : "text-ink-quinary"}`}>
+              {t === "pos" ? "TAIL UP" : t === "neg" ? "TAIL DOWN" : "MEDIAN"}
+            </p>
           </div>
         ))}
       </div>
@@ -238,65 +274,100 @@ function VisualForecast() {
 
 function VisualDecision() {
   return (
-    <div className="card-surface p-6 h-full shadow-elevated flex flex-col">
+    <div className="card-cinematic p-6">
       <div className="flex items-center justify-between">
-        <span className="text-eyebrow uppercase text-ink-quaternary">Scenario · Refinance to IO</span>
-        <span className="text-caption text-positive num">+$418K NW</span>
+        <span className="syslabel">
+          <span className="mono text-ember-500">[03]</span>
+          <span>SCENARIO · REFINANCE TO IO</span>
+        </span>
+        <span className="text-caption text-positive mono">Δ +$418K NW</span>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-3">
         <div className="rounded-md border border-line bg-bg-inset p-4">
-          <p className="text-eyebrow uppercase text-ink-quaternary">Baseline</p>
-          <p className="mt-2 text-h3 text-ink-primary num">$4.82M</p>
-          <p className="text-caption text-ink-quaternary num">FIRE 2043</p>
+          <p className="text-[0.6rem] uppercase text-ink-quaternary mono tracking-wider">BASELINE</p>
+          <p className="mt-2 text-h3 text-ink-primary mono">$4.82M</p>
+          <p className="text-caption text-ink-quaternary mono">FIRE 2043</p>
         </div>
-        <div className="rounded-md border border-accent-500/40 bg-accent-50 p-4">
-          <p className="text-eyebrow uppercase text-accent-500">Scenario</p>
-          <p className="mt-2 text-h3 text-ink-primary num">$5.24M</p>
-          <p className="text-caption text-positive num">FIRE 2039 · −4y</p>
+        <div className="rounded-md border-2 border-ember-500/40 bg-ember-50/60 p-4 relative">
+          <span aria-hidden className="absolute -top-2 left-3 px-1.5 bg-ember-500 text-white text-[0.6rem] mono tracking-wider rounded-sm">SCENARIO</span>
+          <p className="text-[0.6rem] uppercase text-ember-700 mono tracking-wider">PROJECTED</p>
+          <p className="mt-2 text-h3 text-ink-primary mono">$5.24M</p>
+          <p className="text-caption text-positive mono">FIRE 2039 · −4Y</p>
         </div>
       </div>
-      <div className="mt-5 flex flex-col gap-2 text-body-sm text-ink-secondary">
-        <Row k="Cashflow Δ" v="+$1,840 / mo" tone="positive" />
-        <Row k="Tax Δ FY26" v="−$2,140" tone="positive" />
-        <Row k="Liquidity P10" v="$58K" tone="warning" />
+      <div className="mt-5 flex flex-col gap-1.5">
+        {[
+          { k: "Cashflow Δ", v: "+$1,840 / mo", tone: "positive" },
+          { k: "Tax Δ FY26",  v: "−$2,140",      tone: "positive" },
+          { k: "Liquidity P10", v: "$58K", tone: "warning" },
+          { k: "Max DD",      v: "−27%",          tone: "negative" },
+        ].map((r, i) => (
+          <motion.div
+            key={r.k}
+            initial={{ opacity: 0, x: -6 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-center justify-between border-b border-line/60 py-2 last:border-b-0"
+          >
+            <span className="text-body-sm text-ink-tertiary mono uppercase tracking-wide text-[0.7rem]">{r.k}</span>
+            <span className={`text-body-sm mono ${r.tone === "positive" ? "text-positive" : r.tone === "warning" ? "text-warning" : "text-negative"}`}>{r.v}</span>
+          </motion.div>
+        ))}
       </div>
-    </div>
-  );
-}
-
-function Row({ k, v, tone }: { k: string; v: string; tone: "positive" | "warning" | "negative" }) {
-  const c = tone === "positive" ? "text-positive" : tone === "warning" ? "text-warning" : "text-negative";
-  return (
-    <div className="flex items-center justify-between border-b border-line/60 py-1.5 last:border-b-0">
-      <span className="text-ink-tertiary">{k}</span>
-      <span className={`${c} num`}>{v}</span>
     </div>
   );
 }
 
 function VisualAI() {
   const insights = [
-    { tag: "Refinance window", text: "Lock 5.84% IO · saves $1,840/mo cashflow." },
-    { tag: "Div 293 risk", text: "Projected sacrifice triggers Div 293 at FY27." },
-    { tag: "Offset rebalance", text: "Move $40K idle cash to offset · save $208/mo." },
+    { tag: "REFINANCE", text: "Lock 5.84% IO · saves $1,840/mo cashflow.", value: "−$1,840/mo" },
+    { tag: "DIV 293",   text: "Projected sacrifice triggers Div 293 at FY27.", value: "+$2,140 tax" },
+    { tag: "OFFSET",    text: "Move $40K idle cash to offset · save $208/mo.", value: "−$208/mo" },
   ];
   return (
-    <div className="card-surface p-6 h-full shadow-elevated flex flex-col">
+    <div className="card-cinematic p-6">
       <div className="flex items-center justify-between">
-        <span className="text-eyebrow uppercase text-ink-quaternary">AI insights · today</span>
-        <span className="text-caption text-ink-tertiary">3 surfaced</span>
+        <span className="syslabel">
+          <span className="mono text-ember-500">[04]</span>
+          <span>AI INSIGHTS · TODAY</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-caption text-ember-500 mono">
+          <span className="h-1.5 w-1.5 rounded-full bg-ember-500 animate-pulse-soft" />
+          3 SURFACED
+        </span>
       </div>
-      <div className="mt-4 flex flex-col gap-3">
-        {insights.map((x) => (
-          <div key={x.tag} className="rounded-md border border-line bg-bg-inset p-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-accent-500" />
-              <span className="text-eyebrow uppercase text-accent-500">{x.tag}</span>
+      <div className="mt-4 flex flex-col gap-2">
+        {insights.map((x, i) => (
+          <motion.div
+            key={x.tag}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="relative rounded-md border border-line bg-bg-inset/60 p-3.5 group hover:border-ember-500/30 transition-colors"
+          >
+            <div aria-hidden className="absolute left-0 top-3 bottom-3 w-[2px] bg-ember-500/50 rounded-r-full" />
+            <div className="flex items-start justify-between gap-3 pl-3">
+              <div>
+                <span className="text-[0.6rem] mono uppercase tracking-wider text-ember-500">[{x.tag}]</span>
+                <p className="mt-1 text-body-sm text-ink-secondary leading-snug">{x.text}</p>
+              </div>
+              <span className="text-body-sm text-ink-primary mono shrink-0">{x.value}</span>
             </div>
-            <p className="mt-2 text-body-sm text-ink-secondary">{x.text}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function Stat({ k, v, tone }: { k: string; v: string; tone: "positive" | "warning" | "neutral" }) {
+  const c = tone === "positive" ? "text-positive" : tone === "warning" ? "text-warning" : "text-ink-primary";
+  return (
+    <div>
+      <p className="text-[0.6rem] uppercase text-ink-quaternary mono tracking-wider">{k}</p>
+      <p className={`mt-0.5 text-body-sm mono ${c}`}>{v}</p>
     </div>
   );
 }

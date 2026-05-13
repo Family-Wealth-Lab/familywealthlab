@@ -4,7 +4,9 @@
 
 @layer base {
   :root {
-    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-display: var(--font-sans);
+    --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
   html {
@@ -13,7 +15,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
-    background: #F5F5F7;
+    background: #F4F5F7;
   }
 
   body {
@@ -23,37 +25,29 @@
     overflow-x: hidden;
   }
 
-  /* Selection — quiet steel-blue */
   ::selection {
-    background-color: rgba(62, 106, 149, 0.18);
-    color: #111111;
+    background-color: rgba(226, 111, 45, 0.18);
+    color: #0B0F1A;
   }
 
-  /* Scrollbar — Apple-thin */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(60, 60, 67, 0.18);
+    background: rgba(20, 28, 46, 0.18);
     border-radius: 10px;
-    border: 2px solid #F5F5F7;
+    border: 2px solid #F4F5F7;
   }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(60, 60, 67, 0.32); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(20, 28, 46, 0.32); }
 
   /* Lenis */
-  html.lenis,
-  html.lenis body { height: auto; }
+  html.lenis, html.lenis body { height: auto; }
   .lenis.lenis-smooth { scroll-behavior: auto !important; }
   .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
   .lenis.lenis-stopped { overflow: hidden; }
 
   /* Reduced motion guard */
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    *, *::before, *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -61,126 +55,222 @@
     }
   }
 
-  /* Headings inherit ink-primary */
   h1, h2, h3, h4, h5, h6 {
     color: theme("colors.ink.primary");
     font-weight: 600;
-    font-family: var(--font-sans);
+    font-family: var(--font-display);
   }
 
-  /* Default link color */
   a { color: inherit; }
 }
 
 @layer components {
-  /* Frosted glass — light, almost imperceptible */
+  /* ── Glass ────────────────────────────────────────────────────── */
   .glass {
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(60, 60, 67, 0.08);
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid rgba(20, 28, 46, 0.08);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
-
-  /* Heavier glass for the nav */
   .glass-nav {
-    background: rgba(245, 245, 247, 0.78);
-    border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+    background: rgba(244, 245, 247, 0.76);
+    border-bottom: 1px solid rgba(20, 28, 46, 0.08);
     backdrop-filter: saturate(180%) blur(24px);
     -webkit-backdrop-filter: saturate(180%) blur(24px);
   }
+  .glass-deep {
+    background: rgba(7, 10, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
 
-  /* Wallet-style premium card — matte, layered, no glow */
+  /* ── Cards ────────────────────────────────────────────────────── */
   .card-surface {
     background: linear-gradient(180deg, #FFFFFF 0%, #FCFCFD 100%);
-    border: 1px solid rgba(60, 60, 67, 0.08);
+    border: 1px solid rgba(20, 28, 46, 0.08);
     border-radius: theme("borderRadius.2xl");
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.9) inset,
-      0 1px 2px rgba(16, 24, 40, 0.04),
-      0 8px 24px -12px rgba(16, 24, 40, 0.08);
+      0 1px 2px rgba(11, 15, 26, 0.04),
+      0 8px 24px -12px rgba(11, 15, 26, 0.08);
   }
-
-  /* Recessed inset (wells, value rows) */
+  .card-cinematic {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FBFBFD 100%);
+    border: 1px solid rgba(20, 28, 46, 0.08);
+    border-radius: theme("borderRadius.2xl");
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.95) inset,
+      0 2px 4px rgba(11, 15, 26, 0.04),
+      0 16px 40px -12px rgba(11, 15, 26, 0.12),
+      0 32px 64px -20px rgba(11, 15, 26, 0.10),
+      0 64px 120px -32px rgba(52, 70, 106, 0.10);
+  }
   .card-inset {
-    background: #F5F5F7;
-    border: 1px solid rgba(60, 60, 67, 0.06);
+    background: #F4F5F7;
+    border: 1px solid rgba(20, 28, 46, 0.06);
     border-radius: theme("borderRadius.lg");
   }
-
-  /* Hairline divider */
-  .hairline {
-    border-top: 1px solid rgba(60, 60, 67, 0.08);
+  /* Dark variant for the contrast strip section */
+  .card-dark {
+    background: linear-gradient(180deg, #11162A 0%, #0B0F1A 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: theme("borderRadius.2xl");
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      0 16px 40px -12px rgba(0, 0, 0, 0.5),
+      0 32px 64px -20px rgba(0, 0, 0, 0.4);
   }
-  .hairline-strong {
-    border-top: 1px solid rgba(60, 60, 67, 0.14);
-  }
 
-  /* Eyebrow label */
+  /* ── Hairlines ─────────────────────────────────────────────────── */
+  .hairline { border-top: 1px solid rgba(20, 28, 46, 0.08); }
+  .hairline-strong { border-top: 1px solid rgba(20, 28, 46, 0.14); }
+  .hairline-ondark { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+
+  /* ── Labels ────────────────────────────────────────────────────── */
   .eyebrow {
     @apply text-eyebrow uppercase text-ink-quaternary;
+    font-family: var(--font-mono);
+    letter-spacing: 0.16em;
+  }
+  /* System label: "[01] FORECAST" — Linear/Bloomberg DNA */
+  .syslabel {
+    @apply inline-flex items-center gap-2 text-eyebrow uppercase text-ink-quaternary;
+    font-family: var(--font-mono);
+    letter-spacing: 0.16em;
+  }
+  .syslabel-bracket {
+    color: theme("colors.ember.500");
+    font-feature-settings: "tnum" 1;
   }
 
-  /* Tabular numerals for financial data */
+  /* Tabular numerals — financial data */
   .num {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1, "lnum" 1, "ss01" 1;
   }
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
 
-  /* Focus ring — accessible */
+  /* Focus ring */
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ember-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
   }
 
-  /* Hairline ring on cards */
-  .ring-hairline {
-    box-shadow: 0 0 0 1px rgba(60, 60, 67, 0.08);
-  }
+  .ring-hairline { box-shadow: 0 0 0 1px rgba(20, 28, 46, 0.08); }
 
-  /* Section eyebrow with leading silver line */
+  /* Section eyebrow with leading line */
   .section-eyebrow {
     @apply inline-flex items-center gap-3 text-eyebrow uppercase text-ink-quaternary;
+    font-family: var(--font-mono);
+    letter-spacing: 0.16em;
   }
   .section-eyebrow::before {
     content: "";
     display: inline-block;
-    width: 28px;
+    width: 32px;
     height: 1px;
-    background: rgba(60, 60, 67, 0.28);
+    background: rgba(20, 28, 46, 0.28);
   }
 
-  /* Apple-style chip / pill */
+  /* Chip / pill */
   .chip {
     @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-caption;
     background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(60, 60, 67, 0.10);
+    border: 1px solid rgba(20, 28, 46, 0.10);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
   }
+  .chip-ondark {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-caption text-ink-ondarkSecondary;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 
-  /* Live dot */
+  /* Live dot — calm pulse */
   .live-dot {
     @apply inline-block h-1.5 w-1.5 rounded-full;
     background: #1E8E5A;
     box-shadow: 0 0 0 3px rgba(30, 142, 90, 0.12);
   }
+  .live-dot-ember {
+    @apply inline-block h-1.5 w-1.5 rounded-full;
+    background: theme("colors.ember.500");
+    box-shadow: 0 0 0 3px rgba(226, 111, 45, 0.18);
+  }
+
+  /* Keyboard hint */
+  .kbd {
+    @apply inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 mono;
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: theme("colors.ink.quaternary");
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(20, 28, 46, 0.12);
+    box-shadow: 0 1px 0 rgba(20, 28, 46, 0.04);
+  }
+
+  /* Ticker row — endless horizontal scroll */
+  .ticker {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: ticker 60s linear infinite;
+  }
+  .ticker:hover { animation-play-state: paused; }
 }
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .text-pretty  { text-wrap: pretty; }
 
-  /* Premium silver page background */
+  /* Premium silver page background — cooler than v3 */
   .bg-silver {
     background:
-      radial-gradient(ellipse 100% 60% at 50% 0%, rgba(62, 106, 149, 0.025), transparent 60%),
-      linear-gradient(180deg, #FAFAFB 0%, #F2F2F4 60%, #EFEFF2 100%);
+      radial-gradient(ellipse 100% 60% at 50% 0%, rgba(52, 70, 106, 0.030), transparent 60%),
+      linear-gradient(180deg, #F8F9FB 0%, #F1F2F5 60%, #EDEEF1 100%);
   }
 
-  /* Very faint dot grid */
+  /* Cinematic mesh — gradient mesh for hero atmosphere */
+  .bg-mesh {
+    background:
+      radial-gradient(at 12% 18%, rgba(52, 70, 106, 0.10) 0px, transparent 42%),
+      radial-gradient(at 82% 8%, rgba(226, 111, 45, 0.05) 0px, transparent 38%),
+      radial-gradient(at 88% 92%, rgba(52, 70, 106, 0.07) 0px, transparent 44%),
+      radial-gradient(at 8% 88%, rgba(122, 129, 148, 0.09) 0px, transparent 42%);
+  }
+  .bg-mesh-ondark {
+    background:
+      radial-gradient(at 18% 22%, rgba(52, 70, 106, 0.40) 0px, transparent 45%),
+      radial-gradient(at 82% 12%, rgba(226, 111, 45, 0.10) 0px, transparent 40%),
+      radial-gradient(at 88% 88%, rgba(52, 70, 106, 0.30) 0px, transparent 48%);
+  }
+
+  /* Fine dot grid */
   .grid-faint {
-    background-image: radial-gradient(circle at 1px 1px, rgba(60, 60, 67, 0.08) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, rgba(20, 28, 46, 0.08) 1px, transparent 0);
     background-size: 24px 24px;
     background-position: center;
+  }
+  .grid-fine {
+    background-image: radial-gradient(circle at 1px 1px, rgba(20, 28, 46, 0.10) 1px, transparent 0);
+    background-size: 16px 16px;
+  }
+  .grid-fine-ondark {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0);
+    background-size: 18px 18px;
+  }
+  /* Ruled grid lines (Bloomberg / Linear DNA) */
+  .grid-lined {
+    background-image:
+      linear-gradient(rgba(20, 28, 46, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 28, 46, 0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
   }
 
   /* Mask vertical fade */
@@ -188,17 +278,31 @@
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 82%, transparent 100%);
             mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 82%, transparent 100%);
   }
-
-  /* Subtle top spotlight for hero */
-  .spotlight {
-    background:
-      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(62, 106, 149, 0.035), transparent 70%);
+  .mask-fade-r {
+    -webkit-mask-image: linear-gradient(to right, black 70%, transparent 100%);
+            mask-image: linear-gradient(to right, black 70%, transparent 100%);
+  }
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
   }
 
-  /* Soft inner highlight, used on premium cards */
+  /* Spotlight (hero) */
+  .spotlight {
+    background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(52, 70, 106, 0.05), transparent 70%);
+  }
+  /* Ember spotlight, very faint, anchored bottom-right */
+  .ember-glow {
+    background: radial-gradient(ellipse 50% 40% at 88% 86%, rgba(226, 111, 45, 0.10), transparent 60%);
+  }
+
+  /* Soft inner highlight */
   .inner-highlight {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      inset 0 -1px 0 rgba(60, 60, 67, 0.04);
+      inset 0 -1px 0 rgba(20, 28, 46, 0.04);
   }
+
+  /* Tabular numerics utility */
+  .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "lnum" 1; }
 }

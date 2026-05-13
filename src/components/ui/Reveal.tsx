@@ -1,38 +1,43 @@
 "use client";
 import * as React from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { fadeUp, stagger as makeStagger, t } from "@/lib/motion";
+import { fadeUp, blurUp, stagger as makeStagger, t, viewport } from "@/lib/motion";
+
+type Mode = "fadeUp" | "blurUp" | "fadeIn";
 
 interface RevealProps extends React.HTMLAttributes<HTMLDivElement> {
   delay?: number;
-  as?: "div" | "section" | "header" | "article" | "aside";
   amount?: number;
   variants?: Variants;
+  mode?: Mode;
 }
+
+const modeMap: Record<Mode, Variants> = {
+  fadeUp,
+  blurUp,
+  fadeIn: { hidden: { opacity: 0 }, visible: { opacity: 1, transition: t.short } },
+};
 
 export function Reveal({
   children,
   delay = 0,
   className,
-  amount = 0.25,
+  amount = 0.2,
   variants,
+  mode = "fadeUp",
   ...props
 }: RevealProps) {
   const reduce = useReducedMotion();
   if (reduce) {
-    return (
-      <div className={className} {...(props as React.HTMLAttributes<HTMLDivElement>)}>
-        {children}
-      </div>
-    );
+    return <div className={className} {...(props as React.HTMLAttributes<HTMLDivElement>)}>{children}</div>;
   }
   return (
     <motion.div
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount }}
-      variants={variants ?? fadeUp}
-      transition={{ ...t.base, delay }}
+      viewport={{ once: viewport.once, amount }}
+      variants={variants ?? modeMap[mode]}
+      transition={{ delay }}
       className={className}
     >
       {children}
@@ -47,12 +52,9 @@ interface StaggerProps {
   amount?: number;
 }
 
-export function Stagger({
-  children,
-  className,
-  delay = 0.06,
-  amount = 0.25,
-}: StaggerProps) {
+export function Stagger({ children, className, delay = 0.06, amount = 0.2 }: StaggerProps) {
+  const reduce = useReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
       initial="hidden"
@@ -66,15 +68,9 @@ export function Stagger({
   );
 }
 
-export function StaggerItem({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+export function StaggerItem({ children, className, mode = "fadeUp" }: { children: React.ReactNode; className?: string; mode?: Mode }) {
   return (
-    <motion.div variants={fadeUp} className={className}>
+    <motion.div variants={modeMap[mode]} className={className}>
       {children}
     </motion.div>
   );
