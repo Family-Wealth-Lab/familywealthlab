@@ -2,10 +2,14 @@ import { getSessionUser } from "@/lib/auth";
 import { getSnapshot } from "@/lib/snapshot";
 import { runDecision } from "@/lib/engine/runDecision";
 import {
-  SurfaceCard, CardHeader, KpiCard, MetricRow, EmptyState,
+  SurfaceCard, CardHeader, MetricRow, EmptyState,
 } from "@/components/workspace/cards";
 import { PageHeader } from "@/components/workspace/PageHeader";
-import { AreaLine } from "@/components/workspace/charts";
+import {
+  FinancialAreaChart,
+  FinancialLineChart,
+  MetricCard,
+} from "@/components/workspace/charts-interactive";
 import { getChartBundle } from "@/lib/dashboard/charts";
 import { fmtMoney, fmtMoneyCompact, fmtNumber } from "@/components/workspace/format";
 
@@ -65,13 +69,19 @@ export default async function BaselineForecastPage({ params }: Props) {
 
       {/* ── [A] Headline KPIs ─────────────────────────────────── */}
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard index="·" label="NET WORTH TODAY" value={result.initialNetWorth} format="moneyCompact" />
-        <KpiCard index="·" label={`MEDIAN NW · ${horizonYears}y`} value={finalNw ?? 0} format="moneyCompact"
+        <MetricCard index="·" label="NET WORTH TODAY" value={result.initialNetWorth} format="moneyCompact"
+          tooltip="Today's ledger-derived net worth — the starting point for every projected path." />
+        <MetricCard index="·" label={`MEDIAN NW · ${horizonYears}y`} value={finalNw ?? 0} format="moneyCompact"
           sub={nwDelta != null ? `${nwDelta >= 0 ? "+" : ""}${fmtMoney(nwDelta)} vs today` : undefined}
-          tone={nwDelta == null ? "neutral" : nwDelta >= 0 ? "positive" : "negative"} />
-        <KpiCard index="·" label="MEDIAN CAGR" value={cagr ?? 0} format="percent"
-          tone={cagr == null ? "neutral" : cagr >= 0 ? "positive" : "negative"} />
-        <KpiCard index="·" label={`MEDIAN CASH · ${horizonYears}y`} value={finalCash ?? 0} format="moneyCompact" />
+          tone={nwDelta == null ? "neutral" : nwDelta >= 0 ? "positive" : "negative"}
+          sparkline={sampleSeries(result.medianNwPath, 12)}
+          tooltip="Median net worth at the final horizon month across every simulated path. Dispersion lives on the Monte Carlo page." />
+        <MetricCard index="·" label="MEDIAN CAGR" value={cagr ?? 0} format="percent"
+          tone={cagr == null ? "neutral" : cagr >= 0 ? "positive" : "negative"}
+          tooltip="Compound annual growth rate of the median net-worth path — a single-number summary of trajectory." />
+        <MetricCard index="·" label={`MEDIAN CASH · ${horizonYears}y`} value={finalCash ?? 0} format="moneyCompact"
+          sparkline={sampleSeries(result.medianCashPath, 12)}
+          tooltip="Liquid cash at the end of the horizon in the median path — read the liquidity story." />
       </section>
 
       {/* ── [B] Net worth trajectory ──────────────────────────── */}
@@ -80,7 +90,16 @@ export default async function BaselineForecastPage({ params }: Props) {
         <p className="text-caption text-ink-tertiary -mt-2 mb-4">
           Across {result.simulationCount.toLocaleString()} simulated paths, the median net worth at each month. No fan band here — see Monte Carlo for the dispersion.
         </p>
-        <Sparkline points={result.medianNwPath} />
+        <FinancialLineChart
+          xLabels={Array.from({ length: result.medianNwPath.length }, (_, i) => labelForMonth(i, horizonYears, result.medianNwPath.length))}
+          series={[
+            { label: "Median net worth", values: result.medianNwPath, color: "#C97030", fill: true },
+          ]}
+          height={200}
+          showPeriodToggle
+          pointsPerYear={12}
+          ariaLabel="Median net worth path"
+        />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 mt-6">
           <MetricRow label="Today" value={fmtMoney(result.initialNetWorth)} />
           <MetricRow label={`Year ${Math.min(5, horizonYears)}`} value={fmtMoney(pathAt(result.medianNwPath, Math.min(60, result.medianNwPath.length - 1)))} />
@@ -95,7 +114,16 @@ export default async function BaselineForecastPage({ params }: Props) {
         <p className="text-caption text-ink-tertiary -mt-2 mb-4">
           Cash on hand at each month in the median path. A flat or rising curve means your surplus is funding both investment and buffer; a falling curve means cash is being drawn down.
         </p>
-        <Sparkline points={result.medianCashPath} tone="cash" />
+        <FinancialLineChart
+          xLabels={Array.from({ length: result.medianCashPath.length }, (_, i) => labelForMonth(i, horizonYears, result.medianCashPath.length))}
+          series={[
+            { label: "Median cash", values: result.medianCashPath, color: "#3FA88F", fill: true },
+          ]}
+          height={200}
+          showPeriodToggle
+          pointsPerYear={12}
+          ariaLabel="Median cash path"
+        />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 mt-6">
           <MetricRow label="Today" value={fmtMoneyCompact(snap.wealth.cashToday)} />
           <MetricRow label={`Year ${Math.min(5, horizonYears)}`} value={fmtMoneyCompact(pathAt(result.medianCashPath, Math.min(60, result.medianCashPath.length - 1)))} />
@@ -113,7 +141,7 @@ export default async function BaselineForecastPage({ params }: Props) {
         {charts.netWorthTrajectory.length === 0 ? (
           <EmptyState index="·" eyebrow="Empty" title="Awaiting data" body="Composition trajectory activates once your ledger has assets." />
         ) : (
-          <AreaLine
+          <FinancialAreaChart
             xLabels={charts.netWorthTrajectory.map((p) => String(p.year))}
             series={[
               { label: "Property",    values: charts.netWorthTrajectory.map((p) => p.property),       color: "#3FA88F", fill: true },
@@ -122,6 +150,9 @@ export default async function BaselineForecastPage({ params }: Props) {
               { label: "Cash",        values: charts.netWorthTrajectory.map((p) => p.cash),           color: "#5085D9" },
             ]}
             height={260}
+            showPeriodToggle
+            pointsPerYear={1}
+            ariaLabel="Asset class trajectory chart"
           />
         )}
       </SurfaceCard>
@@ -144,36 +175,17 @@ function pathAt(arr: number[], idx: number): number {
   return arr[safe];
 }
 
-interface SparklineProps { points: number[]; tone?: "nw" | "cash" }
-function Sparkline({ points, tone = "nw" }: SparklineProps) {
-  if (points.length < 2) {
-    return (
-      <div className="h-32 rounded-lg bg-bg-inset flex items-center justify-center">
-        <span className="text-caption text-ink-tertiary">Not enough data points</span>
-      </div>
-    );
-  }
-  const w = 800, h = 160, pad = 8;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
-  const xStep = (w - pad * 2) / (points.length - 1);
-  const path = points
-    .map((y, i) => {
-      const px = pad + i * xStep;
-      const py = pad + (h - pad * 2) * (1 - (y - min) / range);
-      return `${i === 0 ? "M" : "L"}${px.toFixed(1)},${py.toFixed(1)}`;
-    })
-    .join(" ");
-  const areaPath = `${path} L${pad + (points.length - 1) * xStep},${h - pad} L${pad},${h - pad} Z`;
-  const stroke = tone === "cash" ? "#0ea5b7" : "#d97706";
-  const fill = tone === "cash" ? "#0ea5b7" : "#d97706";
-  return (
-    <div className="w-full">
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-32 rounded-lg bg-bg-inset">
-        <path d={areaPath} fill={fill} opacity={0.08} />
-        <path d={path} fill="none" stroke={stroke} strokeWidth={2} vectorEffect="non-scaling-stroke" />
-      </svg>
-    </div>
-  );
+function labelForMonth(i: number, horizonYears: number, total: number): string {
+  if (total <= 1) return "";
+  const year = (i / Math.max(1, total - 1)) * horizonYears;
+  return `Yr ${year.toFixed(0)}`;
+}
+
+function sampleSeries(arr: number[], maxPoints: number): number[] {
+  if (arr.length <= maxPoints) return arr;
+  const stride = Math.max(1, Math.floor(arr.length / maxPoints));
+  const out: number[] = [];
+  for (let i = 0; i < arr.length; i += stride) out.push(arr[i]);
+  if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
+  return out;
 }

@@ -3,10 +3,11 @@ import { getSnapshot } from "@/lib/snapshot";
 import { runDecision } from "@/lib/engine/runDecision";
 import type { ScenarioDelta } from "@fwl/engine";
 import {
-  SurfaceCard, CardHeader, MetricRow, EmptyState, KpiCard,
+  EmptyState,
 } from "@/components/workspace/cards";
 import { PageHeader } from "@/components/workspace/PageHeader";
-import { fmtMoney, fmtMoneyCompact, fmtPercent } from "@/components/workspace/format";
+import { MetricCard, ScenarioMatrix } from "@/components/workspace/charts-interactive";
+
 
 export const dynamic = "force-dynamic";
 
@@ -102,50 +103,40 @@ export default async function CompareScenarioPage({ params }: Props) {
 
       {/* Headline winner */}
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard index="·" label="WINNER" value={0} format="raw" sub={candidates[0]?.name ?? "—"} />
-        <KpiCard index="·" label="WINNER SURVIVAL" value={candidates[0]?.survivalPct ?? 0} format="percent" tone="positive" />
-        <KpiCard index="·" label="WINNER MEDIAN NW" value={candidates[0]?.medianTerminalNw ?? 0} format="moneyCompact" />
-        <KpiCard index="·" label="VS HOLD"
+        <MetricCard index={0} label="WINNER" value={candidates[0]?.name ?? "—"} format="raw"
+          tooltip="Top-ranked candidate by survival, then median terminal NW, then liquidity stress." />
+        <MetricCard index={1} label="WINNER SURVIVAL" value={candidates[0]?.survivalPct ?? 0} format="percent" tone="positive"
+          tooltip="Share of paths in which the winning candidate stays solvent." />
+        <MetricCard index={2} label="WINNER MEDIAN NW" value={candidates[0]?.medianTerminalNw ?? 0} format="moneyCompact"
+          tooltip="Median terminal net worth in the winning candidate." />
+        <MetricCard index={3} label="VS HOLD"
           value={(candidates[0]?.medianTerminalNw ?? 0) - (candidates.find(c => c.name === "Hold")?.medianTerminalNw ?? 0)}
-          format="moneyCompact" />
+          format="moneyCompact"
+          delta={{
+            value: (candidates[0]?.medianTerminalNw ?? 0) - (candidates.find(c => c.name === "Hold")?.medianTerminalNw ?? 0),
+            label: "vs hold",
+          }}
+          tooltip="Median terminal NW uplift versus the Hold baseline." />
       </section>
 
-      {/* Detailed table */}
-      <SurfaceCard>
-        <CardHeader index="[B·1]" eyebrow="Detail" title="Side-by-side" />
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-body-sm">
-            <thead>
-              <tr className="text-left text-caption text-ink-tertiary">
-                <th className="py-2 pr-4">#</th>
-                <th className="py-2 pr-4">Candidate</th>
-                <th className="py-2 pr-4 text-right">Survival</th>
-                <th className="py-2 pr-4 text-right">Median NW</th>
-                <th className="py-2 pr-4 text-right">Default</th>
-                <th className="py-2 pr-4 text-right">Liquidity stress</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidates.map((c, i) => (
-                <tr key={c.name} className="border-t border-line-subtle">
-                  <td className="py-3 pr-4 text-ink-tertiary tabular">{i + 1}</td>
-                  <td className="py-3 pr-4">
-                    <div className="font-medium text-ink-primary">{c.name}</div>
-                    <div className="text-caption text-ink-tertiary">{c.description}</div>
-                  </td>
-                  <td className="py-3 pr-4 text-right tabular">{fmtPercent(c.survivalPct)}</td>
-                  <td className="py-3 pr-4 text-right tabular">{fmtMoney(c.medianTerminalNw)}</td>
-                  <td className="py-3 pr-4 text-right tabular">{fmtPercent(c.defaultProb)}</td>
-                  <td className="py-3 pr-4 text-right tabular">{fmtPercent(c.liquidityProb)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-4 text-caption text-ink-quaternary">
-          All three candidates use the same {holdRes.result.simulationCount}-sim seed and the same horizon. Differences are entirely down to the deltas applied.
-        </p>
-      </SurfaceCard>
+      {/* Detailed matrix */}
+      <ScenarioMatrix
+        candidates={candidates.map((c, i) => ({
+          id: c.name,
+          name: c.name,
+          caption: c.description,
+          survivalPct: c.survivalPct,
+          medianTerminalNw: c.medianTerminalNw,
+          defaultProb: c.defaultProb,
+          liquidityProb: c.liquidityProb,
+          recommended: i === 0,
+        }))}
+        cornerLabel="Risk · reward"
+      />
+
+      <p className="text-caption text-ink-quaternary">
+        All three candidates use the same {holdRes.result.simulationCount}-sim seed and the same horizon. Differences are entirely down to the deltas applied.
+      </p>
     </div>
   );
 }

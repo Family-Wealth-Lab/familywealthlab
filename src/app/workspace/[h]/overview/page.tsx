@@ -3,9 +3,14 @@ import { ArrowUpRight, Sparkles, AlertTriangle, CheckCircle2, Hourglass, Calenda
 import { getSessionUser } from "@/lib/auth";
 import { getSnapshot } from "@/lib/snapshot";
 import {
-  SurfaceCard, CardHeader, KpiCard, MetricRow, EmptyState,
+  SurfaceCard, CardHeader, MetricRow, EmptyState,
 } from "@/components/workspace/cards";
-import { Donut, BarRow, AreaLine } from "@/components/workspace/charts";
+import {
+  FinancialAreaChart,
+  AllocationDonutChart,
+  InteractiveBarRow,
+  MetricCard,
+} from "@/components/workspace/charts-interactive";
 import { getChartBundle } from "@/lib/dashboard/charts";
 import { fmtMoney, fmtMoneyCompact, fmtPercent, fmtNumber } from "@/components/workspace/format";
 
@@ -76,16 +81,21 @@ export default async function OverviewPage({ params }: Props) {
       <section>
         <div className="syslabel mb-4"><span className="syslabel-bracket">[02]</span><span>Headline</span></div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <KpiCard index="·" label="NET WORTH" value={wealth.netWorth} format="moneyCompact"
-            sub="Assets − liabilities (ledger)" />
-          <KpiCard index="·" label="ACCESSIBLE WEALTH" value={wealth.accessibleWealth} format="moneyCompact"
-            sub="Liquid + property equity, excl. super" />
-          <KpiCard index="·" label="LOCKED RETIREMENT" value={wealth.lockedRetirementWealth} format="moneyCompact"
-            sub="Super, preservation-locked" />
-          <KpiCard index="·" label="MONTHLY SURPLUS"
+          <MetricCard index="·" label="NET WORTH" value={wealth.netWorth} format="moneyCompact"
+            sub="Assets − liabilities (ledger)"
+            sparkline={charts.netWorthTrajectory.slice(0, 10).map((p) => p.netWorth)}
+            tooltip="Total wealth = every asset on your ledger minus every liability. Drives every downstream tile." />
+          <MetricCard index="·" label="ACCESSIBLE WEALTH" value={wealth.accessibleWealth} format="moneyCompact"
+            sub="Liquid + property equity, excl. super"
+            tooltip="Wealth you can deploy today — cash, investments, and property equity. Excludes super because it's preservation-locked." />
+          <MetricCard index="·" label="LOCKED RETIREMENT" value={wealth.lockedRetirementWealth} format="moneyCompact"
+            sub="Super, preservation-locked"
+            tooltip="Funds locked until preservation age. They count toward total net worth but can't fund FIRE before unlock." />
+          <MetricCard index="·" label="MONTHLY SURPLUS"
             value={cf.monthlySurplus} format="money"
             tone={cf.monthlySurplus > 0 ? "positive" : cf.monthlySurplus < 0 ? "negative" : "neutral"}
-            sub={cf.monthlyIncome ? `${fmtMoney(cf.monthlyIncome)} in · ${fmtMoney(cf.monthlyExpenses)} out` : "No income/expense data"} />
+            sub={cf.monthlyIncome ? `${fmtMoney(cf.monthlyIncome)} in · ${fmtMoney(cf.monthlyExpenses)} out` : "No income/expense data"}
+            tooltip="Income minus expenses each month. The engine assumes you invest this surplus — it's the single biggest driver of your FIRE date." />
         </div>
       </section>
 
@@ -93,18 +103,25 @@ export default async function OverviewPage({ params }: Props) {
       <section>
         <div className="syslabel mb-4"><span className="syslabel-bracket">[03]</span><span>Wealth composition</span></div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <KpiCard index="·" label="CASH TODAY" value={wealth.cashToday} format="moneyCompact"
+          <MetricCard index="·" label="CASH TODAY" value={wealth.cashToday} format="moneyCompact"
             sub="From cash & offset ledgers"
-            href={`/workspace/${params.h}/wealth/cash`} />
-          <KpiCard index="·" label="PROPERTY EQUITY" value={wealth.propertyEquity} format="moneyCompact"
+            href={`/workspace/${params.h}/wealth/cash`}
+            sparkline={charts.netWorthTrajectory.slice(0, 8).map((p) => p.cash)}
+            tooltip="Liquid cash across every cash and offset account in your ledger." />
+          <MetricCard index="·" label="PROPERTY EQUITY" value={wealth.propertyEquity} format="moneyCompact"
             sub="Market − loan balances"
-            href={`/workspace/${params.h}/wealth/properties`} />
-          <KpiCard index="·" label="INVESTMENTS" value={wealth.investments} format="moneyCompact"
-            sub="Stocks + crypto" />
-          <KpiCard index="·" label="DEBT BALANCE" value={wealth.debtBalance} format="moneyCompact"
+            href={`/workspace/${params.h}/wealth/properties`}
+            sparkline={charts.netWorthTrajectory.slice(0, 8).map((p) => p.property - p.liabilities)}
+            tooltip="Property market value minus outstanding mortgages. The engine projects this with your assumed growth + amortisation." />
+          <MetricCard index="·" label="INVESTMENTS" value={wealth.investments} format="moneyCompact"
+            sub="Stocks + crypto"
+            sparkline={charts.netWorthTrajectory.slice(0, 8).map((p) => p.investments)}
+            tooltip="Sum of every stock holding and crypto position on the ledger." />
+          <MetricCard index="·" label="DEBT BALANCE" value={wealth.debtBalance} format="moneyCompact"
             tone={wealth.debtBalance > 0 ? "warning" : "neutral"}
             sub={`Property loans ${fmtMoney(wealth.debtSplit.propertyLoans)} · Other ${fmtMoney(wealth.debtSplit.otherLiabilities)}`}
-            href={`/workspace/${params.h}/wealth/liabilities`} />
+            href={`/workspace/${params.h}/wealth/liabilities`}
+            tooltip="All outstanding liabilities — property loans, credit, and other debt. The engine amortises these each month." />
         </div>
       </section>
 
@@ -118,12 +135,12 @@ export default async function OverviewPage({ params }: Props) {
               body="Add cash, property, super, stocks or crypto to see your portfolio mix."
               ctaLabel="Add assets" ctaHref={`/workspace/${params.h}/wealth/cash`} />
           ) : (
-            <Donut
+            <AllocationDonutChart
               slices={charts.allocation.map((s) => ({
                 label: s.bucket, value: s.amount, color: s.color,
               }))}
               centerLabel={fmtMoneyCompact(charts.allocation.reduce((a, s) => a + s.amount, 0))}
-              centerSub="Total assets"
+              centerSub="Total assets · tap a slice"
             />
           )}
         </SurfaceCard>
@@ -134,7 +151,7 @@ export default async function OverviewPage({ params }: Props) {
           {charts.netWorthTrajectory.length === 0 ? (
             <EmptyState index="·" eyebrow="Empty" title="Awaiting data" body="Net-worth path activates once your ledger has assets and income." />
           ) : (
-            <AreaLine
+            <FinancialAreaChart
               xLabels={charts.netWorthTrajectory.map((p) => String(p.year))}
               series={[
                 { label: "Net worth", values: charts.netWorthTrajectory.map((p) => p.netWorth), color: "#C97030", fill: true },
@@ -142,6 +159,9 @@ export default async function OverviewPage({ params }: Props) {
                 { label: "Property equity", values: charts.netWorthTrajectory.map((p) => p.property - (p.liabilities)), color: "#3FA88F" },
               ]}
               height={260}
+              showPeriodToggle
+              pointsPerYear={1}
+              ariaLabel="Net worth trajectory chart"
             />
           )}
         </SurfaceCard>
@@ -218,7 +238,7 @@ export default async function OverviewPage({ params }: Props) {
               body="Add income and expense rows to populate the cashflow trend."
               ctaLabel="Add income" ctaHref={`/workspace/${params.h}/input/expenses?tab=income`} />
           ) : (
-            <AreaLine
+            <FinancialAreaChart
               xLabels={charts.monthlyTrend.map((p) => p.label)}
               series={[
                 { label: "Income",   values: charts.monthlyTrend.map((p) => p.income),   color: "#3FA88F", fill: true },
@@ -226,6 +246,7 @@ export default async function OverviewPage({ params }: Props) {
                 { label: "Surplus",  values: charts.monthlyTrend.map((p) => p.surplus),  color: "#C97030" },
               ]}
               height={240}
+              ariaLabel="Monthly cashflow chart"
             />
           )}
         </SurfaceCard>
@@ -238,7 +259,7 @@ export default async function OverviewPage({ params }: Props) {
               body="Add an expense to see how your spending splits."
               ctaLabel="Add expense" ctaHref={`/workspace/${params.h}/input/expenses?add=1`} />
           ) : (
-            <BarRow
+            <InteractiveBarRow
               rows={charts.expensesByCategory.slice(0, 6).map((c) => ({
                 label: c.category,
                 value: c.amount,
@@ -258,7 +279,7 @@ export default async function OverviewPage({ params }: Props) {
           {charts.firePath.length === 0 ? (
             <EmptyState index="·" eyebrow="Empty" title="Awaiting data" body="FIRE path activates once income, expenses, and at least one investment are recorded." />
           ) : (
-            <AreaLine
+            <FinancialAreaChart
               xLabels={charts.firePath.map((p) => `${p.year} · ${p.age}`)}
               series={[
                 { label: "Liquid wealth",  values: charts.firePath.map((p) => p.liquidWealth),       color: "#C97030", fill: true },
@@ -266,6 +287,8 @@ export default async function OverviewPage({ params }: Props) {
                 { label: "Passive income", values: charts.firePath.map((p) => p.passiveIncomeAnnual), color: "#3FA88F" },
               ]}
               height={260}
+              threshold={fire.targetAmount != null ? { value: fire.targetAmount, label: `FIRE target · ${fmtMoneyCompact(fire.targetAmount)}` } : undefined}
+              ariaLabel="FIRE projection chart"
             />
           )}
         </SurfaceCard>

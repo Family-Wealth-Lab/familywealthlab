@@ -2,9 +2,10 @@ import { getSessionUser } from "@/lib/auth";
 import { getSnapshot } from "@/lib/snapshot";
 import { runDecision } from "@/lib/engine/runDecision";
 import {
-  SurfaceCard, CardHeader, KpiCard, MetricRow, EmptyState,
+  SurfaceCard, CardHeader, MetricRow, EmptyState,
 } from "@/components/workspace/cards";
 import { PageHeader } from "@/components/workspace/PageHeader";
+import { MetricCard, MonteCarloFanChart } from "@/components/workspace/charts-interactive";
 import { fmtMoney, fmtMoneyCompact, fmtPercent } from "@/components/workspace/format";
 
 export const dynamic = "force-dynamic";
@@ -63,14 +64,18 @@ export default async function MonteCarloPage({ params }: Props) {
 
       {/* ── [A] Stress probabilities ──────────────────────────── */}
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard index="·" label="DEFAULT" value={result.defaultProbability} format="percent"
-          tone={result.defaultProbability >= 0.20 ? "negative" : result.defaultProbability >= 0.05 ? "warning" : "positive"} />
-        <KpiCard index="·" label="LIQUIDITY STRESS" value={result.liquidityStressProbability} format="percent"
-          tone={result.liquidityStressProbability >= 0.30 ? "negative" : result.liquidityStressProbability >= 0.10 ? "warning" : "positive"} />
-        <KpiCard index="·" label="NEGATIVE EQUITY" value={result.negativeEquityProbability} format="percent"
-          tone={result.negativeEquityProbability >= 0.20 ? "negative" : result.negativeEquityProbability >= 0.05 ? "warning" : "positive"} />
-        <KpiCard index="·" label="REFINANCE PRESSURE" value={result.refinancePressureProbability} format="percent"
-          tone={result.refinancePressureProbability >= 0.30 ? "negative" : result.refinancePressureProbability >= 0.10 ? "warning" : "positive"} />
+        <MetricCard index={0} label="DEFAULT" value={result.defaultProbability} format="percent"
+          tone={result.defaultProbability >= 0.20 ? "negative" : result.defaultProbability >= 0.05 ? "warning" : "positive"}
+          tooltip="Probability that a simulated path runs out of cash before horizon." />
+        <MetricCard index={1} label="LIQUIDITY STRESS" value={result.liquidityStressProbability} format="percent"
+          tone={result.liquidityStressProbability >= 0.30 ? "negative" : result.liquidityStressProbability >= 0.10 ? "warning" : "positive"}
+          tooltip="Share of paths where cash buffer breaches the safe floor for 3+ months." />
+        <MetricCard index={2} label="NEGATIVE EQUITY" value={result.negativeEquityProbability} format="percent"
+          tone={result.negativeEquityProbability >= 0.20 ? "negative" : result.negativeEquityProbability >= 0.05 ? "warning" : "positive"}
+          tooltip="Share of paths where property LVR exceeds 100% at any point." />
+        <MetricCard index={3} label="REFINANCE PRESSURE" value={result.refinancePressureProbability} format="percent"
+          tone={result.refinancePressureProbability >= 0.30 ? "negative" : result.refinancePressureProbability >= 0.10 ? "warning" : "positive"}
+          tooltip="Share of paths where DSCR drops below the bank's serviceability threshold." />
       </section>
 
       {/* ── [B] Terminal NW dispersion ────────────────────────── */}
@@ -79,7 +84,7 @@ export default async function MonteCarloPage({ params }: Props) {
         <p className="text-caption text-ink-tertiary -mt-2 mb-4">
           The 10th, 50th, and 90th percentiles of terminal net worth. P10 is the bad-luck-but-not-catastrophic outcome; P90 is the lucky tailwind path.
         </p>
-        <PercentileBar p10={p10} p50={p50} p90={p90} initial={result.initialNetWorth} />
+        <MonteCarloFanChart p10={p10} p50={p50} p90={p90} initial={result.initialNetWorth} height={140} />
         <div className="grid grid-cols-3 gap-x-6 gap-y-1 mt-6">
           <MetricRow label="P10 (bad path)" value={fmtMoney(p10)} />
           <MetricRow label="P50 (median)" value={fmtMoney(p50)} />
@@ -128,26 +133,3 @@ export default async function MonteCarloPage({ params }: Props) {
   );
 }
 
-function PercentileBar({ p10, p50, p90, initial }: { p10: number; p50: number; p90: number; initial: number }) {
-  const min = Math.min(p10, initial, 0);
-  const max = Math.max(p90, initial);
-  const range = max - min || 1;
-  const pct = (n: number) => `${Math.max(0, Math.min(100, ((n - min) / range) * 100)).toFixed(1)}%`;
-  return (
-    <div className="w-full mt-2">
-      <div className="relative h-10 rounded-lg bg-bg-inset overflow-visible">
-        <div
-          className="absolute top-2 bottom-2 rounded-md bg-ember-500/30 border border-ember-500/60"
-          style={{ left: pct(p10), width: `calc(${pct(p90)} - ${pct(p10)})` }}
-        />
-        <div className="absolute top-1 bottom-1 w-0.5 bg-ember-700" style={{ left: pct(p50) }} aria-label="P50 marker" />
-        <div className="absolute top-1 bottom-1 w-0.5 bg-ink-tertiary" style={{ left: pct(initial) }} aria-label="Today marker" />
-      </div>
-      <div className="flex justify-between text-caption text-ink-tertiary mt-1">
-        <span>{fmtMoneyCompact(min)}</span>
-        <span>Today: {fmtMoneyCompact(initial)}</span>
-        <span>{fmtMoneyCompact(max)}</span>
-      </div>
-    </div>
-  );
-}
