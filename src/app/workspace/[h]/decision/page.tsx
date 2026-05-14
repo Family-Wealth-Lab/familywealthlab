@@ -18,6 +18,7 @@ import {
   type RiskMetric,
 } from "@/components/workspace/decision";
 import { fmtMoney, fmtPercent } from "@/components/workspace/format";
+import { DecisionMatrix, type DecisionRiskMetric } from "@/components/workspace/charts-interactive";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,52 @@ export default async function DecisionPage({ params }: Props) {
           </span>
         </div>
         <RiskStrip metrics={riskMetrics} />
+      </section>
+
+      {/* ── [D02·B] Decision matrix ─────────────────────────── */}
+      <section>
+        <div className="syslabel mb-4">
+          <span className="syslabel-bracket">[D02·B]</span>
+          <span>Strategy matrix</span>
+          <span className="text-ink-quinary">·</span>
+          <span className="inline-flex items-center gap-1.5 text-ink-tertiary">Baseline view</span>
+        </div>
+        <DecisionMatrix
+          candidates={[{ id: "baseline", name: "Baseline hold", caption: "Current plan, no deltas", recommended: true }]}
+          metrics={[
+            {
+              label: "Survival", caption: "Solvent through horizon",
+              values: [survivalPct],
+              warnAt: 0.80, dangerAt: 0.95, higherIsBetter: true,
+              format: (v) => fmtPercent(v),
+            } satisfies DecisionRiskMetric,
+            {
+              label: "Default", caption: "Probability of insolvency",
+              values: [result.defaultProbability ?? 0],
+              warnAt: 0.05, dangerAt: 0.20,
+              format: (v) => fmtPercent(v),
+            } satisfies DecisionRiskMetric,
+            {
+              label: "Liquidity stress", caption: "Cash floor breached",
+              values: [result.liquidityStressProbability ?? 0],
+              warnAt: 0.10, dangerAt: 0.30,
+              format: (v) => fmtPercent(v),
+            } satisfies DecisionRiskMetric,
+            {
+              label: "Negative equity", caption: "Property < debt",
+              values: [result.negativeEquityProbability ?? 0],
+              warnAt: 0.05, dangerAt: 0.20,
+              format: (v) => fmtPercent(v),
+            } satisfies DecisionRiskMetric,
+            {
+              label: "Refi pressure", caption: "DSR/LVR bands degrading",
+              values: [result.refinancePressureProbability ?? 0],
+              warnAt: 0.10, dangerAt: 0.30,
+              format: (v) => fmtPercent(v),
+            } satisfies DecisionRiskMetric,
+          ]}
+          cornerLabel="Risk · outcome"
+        />
       </section>
 
       {/* ── [D03] Serviceability snapshot ────────────────────────── */}

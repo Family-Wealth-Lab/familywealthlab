@@ -2,10 +2,10 @@ import { getSessionUser } from "@/lib/auth";
 import { getSnapshot } from "@/lib/snapshot";
 import { runDecision } from "@/lib/engine/runDecision";
 import {
-  SurfaceCard, CardHeader, KpiCard, MetricRow, EmptyState,
+  SurfaceCard, CardHeader, MetricRow, EmptyState,
 } from "@/components/workspace/cards";
 import { PageHeader } from "@/components/workspace/PageHeader";
-import { AreaLine } from "@/components/workspace/charts";
+import { FinancialAreaChart, MetricCard } from "@/components/workspace/charts-interactive";
 import { getChartBundle } from "@/lib/dashboard/charts";
 import { fmtMoney, fmtMoneyCompact, fmtPercent, fmtNumber } from "@/components/workspace/format";
 
@@ -75,18 +75,22 @@ export default async function FireForecastPage({ params }: Props) {
 
       {/* ── [A] Headline ──────────────────────────────────────── */}
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard index="·" label="PROGRESS" value={fire.progressPct ?? 0} format="percent"
-          sub={`${fmtMoneyCompact(wealth.accessibleWealth)} / ${fmtMoneyCompact(target)}`} />
-        <KpiCard index="·" label="GAP" value={fire.gap ?? 0} format="moneyCompact" />
-        <KpiCard index="·" label="LINEAR ETA"
+        <MetricCard index={0} label="PROGRESS" value={fire.progressPct ?? 0} format="percent"
+          sub={`${fmtMoneyCompact(wealth.accessibleWealth)} / ${fmtMoneyCompact(target)}`}
+          tooltip="Share of your FIRE target already in accessible wealth." />
+        <MetricCard index={1} label="GAP" value={fire.gap ?? 0} format="moneyCompact"
+          tooltip="Remaining dollars between accessible wealth and your FIRE target." />
+        <MetricCard index={2} label="LINEAR ETA"
           value={fire.estYearsToFire ?? 0} format="raw"
-          sub={fire.estYearsToFire != null ? `${fmtNumber(fire.estYearsToFire, 1)} yrs at today's surplus` : "—"} />
-        <KpiCard index="·" label="ENGINE ETA"
+          sub={fire.estYearsToFire != null ? `${fmtNumber(fire.estYearsToFire, 1)} yrs at today's surplus` : "—"}
+          tooltip="Deterministic years to FIRE assuming today's surplus and your return assumption." />
+        <MetricCard index={3} label="ENGINE ETA"
           value={crossoverYears ?? 0} format="raw"
           sub={crossoverYears != null
             ? `${fmtNumber(crossoverYears, 1)} yrs · median path crosses target`
             : `Not within ${horizonYears}y horizon`}
-          tone={crossoverYears == null ? "warning" : "positive"} />
+          tone={crossoverYears == null ? "warning" : "positive"}
+          tooltip="Year in which the engine's median path crosses your FIRE target." />
       </section>
 
       {/* ── [B] Two-method comparison ─────────────────────────── */}
@@ -145,14 +149,17 @@ export default async function FireForecastPage({ params }: Props) {
         {charts.firePath.length === 0 ? (
           <EmptyState index="·" eyebrow="Empty" title="Awaiting data" body="FIRE path activates once your ledger has investments." />
         ) : (
-          <AreaLine
+          <FinancialAreaChart
             xLabels={charts.firePath.map((p) => `${p.year} · ${p.age}`)}
             series={[
               { label: "Liquid wealth",  values: charts.firePath.map((p) => p.liquidWealth), color: "#C97030", fill: true },
               { label: "Total wealth",   values: charts.firePath.map((p) => p.totalWealth),  color: "#7B6CF6" },
-              { label: "FIRE target",    values: charts.firePath.map(() => target),           color: "#C24A6B" },
             ]}
-            height={260}
+            threshold={{ value: target, label: `FIRE target · ${fmtMoneyCompact(target)}` }}
+            height={300}
+            showPeriodToggle
+            pointsPerYear={1}
+            ariaLabel="Liquid wealth projection vs FIRE target"
           />
         )}
       </SurfaceCard>
@@ -165,11 +172,15 @@ function LinearFireOnly({ snap, householdId }: { snap: Awaited<ReturnType<typeof
   return (
     <>
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard index="·" label="PROGRESS" value={fire.progressPct ?? 0} format="percent" />
-        <KpiCard index="·" label="GAP" value={fire.gap ?? 0} format="moneyCompact" />
-        <KpiCard index="·" label="LINEAR ETA" value={fire.estYearsToFire ?? 0} format="raw"
-          sub={fire.estYearsToFire != null ? `${fmtNumber(fire.estYearsToFire, 1)} yrs at today's surplus` : "—"} />
-        <KpiCard index="·" label="ACCESSIBLE WEALTH" value={wealth.accessibleWealth} format="moneyCompact" />
+        <MetricCard index={0} label="PROGRESS" value={fire.progressPct ?? 0} format="percent"
+          tooltip="Share of your FIRE target already in accessible wealth." />
+        <MetricCard index={1} label="GAP" value={fire.gap ?? 0} format="moneyCompact"
+          tooltip="Remaining dollars between accessible wealth and target." />
+        <MetricCard index={2} label="LINEAR ETA" value={fire.estYearsToFire ?? 0} format="raw"
+          sub={fire.estYearsToFire != null ? `${fmtNumber(fire.estYearsToFire, 1)} yrs at today's surplus` : "—"}
+          tooltip="Deterministic years to FIRE assuming today's surplus." />
+        <MetricCard index={3} label="ACCESSIBLE WEALTH" value={wealth.accessibleWealth} format="moneyCompact"
+          tooltip="Liquid + investable wealth available before retirement age." />
       </section>
       <EmptyState
         index="·" eyebrow="Engine projection unavailable"

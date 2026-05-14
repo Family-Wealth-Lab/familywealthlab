@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import {
-  SurfaceCard, CardHeader, MetricRow, KpiCard,
+  SurfaceCard, CardHeader, MetricRow,
 } from "@/components/workspace/cards";
+import { MetricCard } from "@/components/workspace/charts-interactive";
 import { Field, inputCls } from "@/components/workspace/forms/Field";
 import { fmtMoney, fmtMoneyCompact, fmtPercent } from "@/components/workspace/format";
 import { runWhatIf, type WhatIfResult } from "./actions";
@@ -104,25 +105,29 @@ export function WhatIfPanel({ householdId }: Props) {
       {result && (
         <>
           <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard
-              index="·" label="SURVIVAL" value={result.scenario.survivalPct} format="percent"
+            <MetricCard
+              index={0} label="SURVIVAL" value={result.scenario.survivalPct} format="percent"
               sub={signedPct(result.deltas.survivalPctDelta)}
               tone={result.deltas.survivalPctDelta > 0.005 ? "positive" : result.deltas.survivalPctDelta < -0.005 ? "negative" : "neutral"}
+              tooltip="Share of simulated paths that stay solvent in this scenario."
             />
-            <KpiCard
-              index="·" label="MEDIAN TERMINAL NW" value={result.scenario.medianTerminalNw} format="moneyCompact"
+            <MetricCard
+              index={1} label="MEDIAN TERMINAL NW" value={result.scenario.medianTerminalNw} format="moneyCompact"
               sub={signedMoney(result.deltas.medianTerminalNwDelta)}
               tone={result.deltas.medianTerminalNwDelta > 0 ? "positive" : result.deltas.medianTerminalNwDelta < 0 ? "negative" : "neutral"}
+              tooltip="Median terminal net worth across simulated paths."
             />
-            <KpiCard
-              index="·" label="DEFAULT PROB" value={result.scenario.defaultProb} format="percent"
+            <MetricCard
+              index={2} label="DEFAULT PROB" value={result.scenario.defaultProb} format="percent"
               sub={signedPct(result.deltas.defaultProbDelta, true)}
               tone={result.deltas.defaultProbDelta < -0.005 ? "positive" : result.deltas.defaultProbDelta > 0.005 ? "negative" : "neutral"}
+              tooltip="Probability the household runs out of cash before horizon."
             />
-            <KpiCard
-              index="·" label="LIQUIDITY STRESS" value={result.scenario.liquidityProb} format="percent"
+            <MetricCard
+              index={3} label="LIQUIDITY STRESS" value={result.scenario.liquidityProb} format="percent"
               sub={signedPct(result.deltas.liquidityProbDelta, true)}
               tone={result.deltas.liquidityProbDelta < -0.005 ? "positive" : result.deltas.liquidityProbDelta > 0.005 ? "negative" : "neutral"}
+              tooltip="Share of paths that breach the cash buffer floor."
             />
           </section>
 
