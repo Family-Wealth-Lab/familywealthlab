@@ -17,7 +17,7 @@ set search_path = public;
 -- ── 1. ledger.cash_accounts ────────────────────────────────────────────────
 create table if not exists ledger.cash_accounts (
   id              uuid primary key default gen_random_uuid(),
-  household_id    uuid not null references public.households(id) on delete cascade,
+  household_id    uuid not null references app.households(id) on delete cascade,
   name            text not null,
   type            text not null check (type in ('checking','savings','offset','emergency','other')),
   institution     text,
@@ -46,7 +46,7 @@ create policy cash_accounts_delete on ledger.cash_accounts
 -- ── 2. ledger.liabilities ──────────────────────────────────────────────────
 create table if not exists ledger.liabilities (
   id              uuid primary key default gen_random_uuid(),
-  household_id    uuid not null references public.households(id) on delete cascade,
+  household_id    uuid not null references app.households(id) on delete cascade,
   name            text not null,
   type            text not null check (type in
                     ('credit_card','personal_loan','heloc','student_loan','other')),
@@ -76,7 +76,7 @@ create policy liabilities_delete on ledger.liabilities
 -- ── 3. ledger.super_accounts ───────────────────────────────────────────────
 create table if not exists ledger.super_accounts (
   id                  uuid primary key default gen_random_uuid(),
-  household_id        uuid not null references public.households(id) on delete cascade,
+  household_id        uuid not null references app.households(id) on delete cascade,
   owner_label         text,                      -- free text e.g. "Roham", "Fara"
   provider            text,
   balance             numeric(14,2) not null default 0,
@@ -106,7 +106,7 @@ create policy super_accounts_delete on ledger.super_accounts
 -- One row per household. Refreshed on every ledger write; readers may also
 -- fall through to a live recompute if `computed_at` is older than 5 minutes.
 create table if not exists ledger.snapshot_cache (
-  household_id    uuid primary key references public.households(id) on delete cascade,
+  household_id    uuid primary key references app.households(id) on delete cascade,
   payload         jsonb not null,            -- the full Snapshot struct
   schema_version  int not null default 1,
   computed_at     timestamptz not null default now()
