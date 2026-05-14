@@ -219,3 +219,115 @@ and AI insights / auto-import are stubs that will fill out in PR #9+.
 - FIRE-path interactive page
 - Debt strategy interactive page
 - Real bank-feed integration (replace `AutoImportSettings` stub)
+
+---
+
+# Brand-system refinement (follow-up commit)
+
+Tacked onto PR #8 to integrate the official Family Wealth Lab logo and align
+the surrounding UI with the calm family-office aesthetic the brand reference
+specifies. Scoped tightly: no UI-wide accent changes, no app-wide font swap,
+no decorative additions. Just brand fidelity where it belongs.
+
+## Locked decisions (from the user, before any code changed)
+
+- **Ember accent stays** as the functional UI accent (focus rings, status
+  dots, hover glows). Brand-amber is reserved for the logo + brand surfaces.
+- **`[FWL]` mono tag is retired.** Reads "crypto/tech terminal", opposite of
+  family-office. Wordmark stands alone.
+- **No serif app-wide.** Inter remains for headings + body. The serif lives
+  **only** inside `<Logo withWordmark>` so the logo wordmark harmonises with
+  the artwork without leaking into the rest of the product.
+
+## Logo artwork
+
+Faithful vector recreation of the reference: tree growing inside a circle,
+with mixed paper + amber leaves at the canopy. Calm, emblematic.
+
+- **Background:** always transparent. Never a baked rectangle.
+- **Structural elements:** `currentColor` driven, so the mark inverts cleanly
+  between dark/light tones via the `tone` prop on `<Logo>`.
+- **Amber accent:** `#F5A623` on dark surfaces, `#C5841A` on light (the
+  deeper tone is required for WCAG AA against paper backgrounds).
+- **Two variants:**
+  - `variant="mark"` (default) — tree-in-circle only. Used everywhere ≤32 px.
+  - `variant="full"` — same mark plus a subtle ascending growth line at the
+    base for marketing/login moments. Replaces the earlier chart+arrow draft
+    which read too "fintech logo generator" and crowded the mark at small
+    sizes.
+- **Favicon variant:** a deliberately simplified silhouette tree-in-circle,
+  shipped as `src/app/icon.svg`. Drops the fine canopy detail so the mark
+  reads cleanly at 16 px in browser tabs.
+- **Apple touch icon:** `public/apple-touch-icon.svg`, 192×192, with a baked
+  paper background (the **only** baked background in the whole logo system —
+  required by iOS, which renders transparent touch icons against pure black
+  inside its squircle mask). Generous 40 px padding so the mark survives the
+  mask without clipping.
+
+## Files touched
+
+### New / replaced
+
+| Path | Purpose |
+| --- | --- |
+| `src/components/brand/Logo.tsx` | Rewritten end-to-end. New `variant` prop, faithful tree-in-circle vector, theme-aware via `tone`. Same API as before so all 5 existing call sites work unchanged. |
+| `src/app/icon.svg` | Replaced the abstract orange-gradient circle placeholder with the simplified tree-in-circle favicon. Transparent background. |
+| `public/apple-touch-icon.svg` | New. iOS home-screen icon, 192×192, with paper background + squircle-safe padding. |
+| `src/app/manifest.ts` | New. PWA manifest typed via Next 14's MetadataRoute API. `theme_color` `#0B0F1A`, `background_color` `#F4F5F7`, icons array pointing at the two SVGs above. |
+
+### Edited
+
+| Path | Change |
+| --- | --- |
+| `src/app/layout.tsx` | Added `metadata.icons` block to explicitly link `/icon.svg` and `/apple-touch-icon.svg`. Next 14's apple-icon route convention only auto-picks .png/.jpg/.webp, so the SVG must be linked manually. |
+| `src/app/globals.css` | Added `--font-serif` (system serif stack) and `--brand-amber` / `--brand-amber-dk` CSS variables. Scoped to brand surfaces; no effect on existing UI tokens. |
+| `tailwind.config.ts` | Added `serif` to `fontFamily` so `font-serif` Tailwind class works on the wordmark. `colors.brand.{amber, amber-dk, ink, paper}` was already present from the earlier session segment. |
+| `src/middleware.ts` | Whitelisted `/icon`, `/apple-icon`, and `/manifest.webmanifest` in `PUBLIC_PATHS` so unauthenticated browsers (and the OS PWA installer) can fetch brand assets without an auth bounce. |
+| `src/app/(app)/_components/AppShell.tsx` | Removed `[FWL]` mono tag and the external wordmark text (×2: mobile top bar + desktop sidebar). Replaced with `<Logo withWordmark size={22} />`. |
+| `src/app/workspace/[h]/_components/WorkspaceShell.tsx` | Same change (×2: mobile + desktop). |
+| `src/components/layout/Nav.tsx` | Removed `[FWL]`. Logo now renders mark-only on mobile (sm:hidden), full lockup from sm: up. |
+| `src/components/auth/AuthShell.tsx` | Removed `[FWL]` + JSDoc reference. Login/signup/reset header now uses `<Logo withWordmark size={22} />`. |
+| `src/components/layout/Footer.tsx` | Untouched; already used the correct `<Logo withWordmark size={24} tone="dark" />` pattern. |
+
+## Visual QA (Playwright, dev server, retina 2×)
+
+Captured screenshots in `/home/user/workspace/`:
+
+- `qa_landing_top.png` — desktop landing nav, full lockup, calm and premium.
+- `qa_landing_footer3.png` — desktop landing footer on dark, white tree
+  silhouette + amber crown reading clearly against `bg-bg-deeper`.
+- `qa_login.png` / `qa_signup.png` — auth pages, logo top-left, no `[FWL]`.
+- `qa_login_mobile.png` — mobile login, retina-sharp.
+- `qa_landing_mobile_top.png` — mobile landing, mark-only logo (no wordmark
+  to avoid crowding the 390 px viewport).
+- `qa_favicons2.png` — favicon rendered at 16/32/64 px and the apple-touch
+  icon inside a simulated iOS squircle. All readable.
+
+## Behaviour preserved
+
+- All 5 existing `<Logo />` call sites still work with the same prop API
+  (`className`, `withWordmark`, `size`, `tone`). The `variant` prop is new
+  and optional (defaults to `"mark"`).
+- Ember UI accents are completely untouched (focus rings, dots, hover glows,
+  status indicators all retain `text-ember-500` / `bg-ember-500`).
+- No font files added. The serif uses the system stack
+  (`ui-serif → Iowan Old Style → Apple Garamond → Palatino → Times → Georgia`)
+  so there is zero network cost and zero FOIT.
+
+## Build status
+
+- `npx tsc --noEmit` — clean.
+- `npm run build` — clean. No new warnings. Bundle sizes unchanged.
+
+## Out of scope for this commit (deferred)
+
+- PNG raster fallbacks at 192/512 px for the PWA. Modern browsers + PWA
+  installers handle SVG fine; PNGs are a future polish if support for older
+  Android browsers becomes needed.
+- A bespoke serif font (Fraunces, Source Serif 4, etc.) for the wordmark.
+  The user explicitly chose system serif fallback to keep the UI calm and
+  avoid loading another font file.
+- Marketing-page hero treatment using the full-variant logo. The landing
+  page already renders the mark; whether the full variant should appear at
+  the top of the hero is a marketing decision, not a brand-system one.
+
