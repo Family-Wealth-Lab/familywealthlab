@@ -61,7 +61,7 @@ export function HeroDashboard() {
             <div>
               <p className="syslabel">
                 <span className="mono text-ember-500">[P50]</span>
-                <span>PROJECTED NET WORTH · 20Y</span>
+                <span>PROJECTED NET WORTH · {HERO_KPIS.horizonYears}Y</span>
               </p>
               <div className="mt-3 flex items-baseline gap-3">
                 <Counter
@@ -95,7 +95,7 @@ export function HeroDashboard() {
                 delay={0.15}
                 className="mt-1 text-h3 text-ink-primary mono"
               />
-              <span className="text-caption text-positive mono">−4Y BASELINE</span>
+              <span className="text-caption text-positive mono">{HERO_KPIS.fireYear < HERO_KPIS.endYear ? `−${HERO_KPIS.endYear - HERO_KPIS.fireYear}Y` : `+${HERO_KPIS.fireYear - HERO_KPIS.endYear}Y`} BASELINE</span>
             </div>
           </div>
 

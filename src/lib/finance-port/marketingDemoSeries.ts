@@ -135,18 +135,22 @@ export const HERO_P90_M = HERO_FAN_M.slice(0, 10).map((f) => f.p90);
 
 // ─── KPI snapshot (for hero card readout + StatsBand) ─────────────────────────
 
-const last = baseProjection[baseProjection.length - 1];
+// Marketing displays a 10-year horizon (chart shows 10 points). Anchor headline
+// KPI to the same horizon so the chart and headline tell one consistent story.
+const MARKETING_HORIZON = 10;
+const horizonEnd = baseProjection[MARKETING_HORIZON - 1];
+const horizonEndFan = HERO_FAN_M[MARKETING_HORIZON - 1];
 const first = baseProjection[0];
 
 export const HERO_KPIS = {
-  projectedNetWorthM: Number((last.endNetWorth / 1_000_000).toFixed(2)),
-  projectedDelta: `+${(((last.endNetWorth / Math.max(first.endNetWorth, 1)) - 1) * 100).toFixed(1)}%`,
-  p10M: HERO_FAN_M[HERO_FAN_M.length - 1].p10,
-  p90M: HERO_FAN_M[HERO_FAN_M.length - 1].p90,
+  projectedNetWorthM: Number((horizonEnd.endNetWorth / 1_000_000).toFixed(2)),
+  projectedDelta: `+${(((horizonEnd.endNetWorth / Math.max(first.endNetWorth, 1)) - 1) * 100).toFixed(1)}%`,
+  p10M: horizonEndFan.p10,
+  p90M: horizonEndFan.p90,
   paths: PATHS,
-  horizonYears: YEARS,
+  horizonYears: MARKETING_HORIZON,
   startYear: first.year,
-  endYear: last.year,
+  endYear: horizonEnd.year,
   // FIRE estimate: rough years-to-FIRE where passive income (4% of investable)
   // covers monthly_expenses * 12. Pure deterministic calc.
   fireYear: estimateFireYear(),
