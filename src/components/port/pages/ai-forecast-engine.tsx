@@ -38,6 +38,7 @@ import { runMonteCarlo } from "@/lib/finance-port/monteCarloEngine";
 import {
   ComposedChart, Area, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
+  ReferenceDot,
 } from "recharts";
 import {
   Brain, Cpu, Zap, AlertTriangle, CheckCircle2, ArrowRight,
@@ -690,11 +691,11 @@ export default function AIForecastEnginePage() {
           </p>
           <div className="flex flex-wrap gap-3 mb-3">
             {[
-              { color: '#22c55e', label: 'P90 (Best 10%)' },
-              { color: '#6366f1', label: 'P75' },
-              { color: '#eab308', label: 'Median' },
-              { color: '#f97316', label: 'P25' },
-              { color: '#ef4444', label: 'P10 (Worst 10%)' },
+              { color: 'hsl(var(--v2-pos))',     label: 'P90 (Best 10%)' },
+              { color: 'hsl(var(--v2-chart-1))', label: 'P75' },
+              { color: 'hsl(var(--v2-chart-3))', label: 'Median' },
+              { color: 'hsl(var(--v2-chart-4))', label: 'P25' },
+              { color: 'hsl(var(--v2-neg))',     label: 'P10 (Worst 10%)' },
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-1.5">
                 <div className="w-5 h-0.5 rounded-full" style={{ background: color }} />
@@ -703,11 +704,11 @@ export default function AIForecastEnginePage() {
             ))}
           </div>
           <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={fanData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+            <ComposedChart data={fanData} margin={{ top: 10, right: 96, left: 10, bottom: 0 }}>
               <defs>
                 {[
-                  { id: 'p90Fill', color: '#22c55e' }, { id: 'p75Fill', color: '#6366f1' },
-                  { id: 'p25Fill', color: '#f97316' }, { id: 'p10Fill', color: '#ef4444' },
+                  { id: 'p90Fill', color: 'hsl(var(--v2-pos))' }, { id: 'p75Fill', color: 'hsl(var(--v2-chart-1))' },
+                  { id: 'p25Fill', color: 'hsl(var(--v2-chart-4))' }, { id: 'p10Fill', color: 'hsl(var(--v2-neg))' },
                 ].map(({ id, color }) => (
                   <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={color} stopOpacity={0.12} />
@@ -719,11 +720,66 @@ export default function AIForecastEnginePage() {
               <XAxis dataKey="year" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={v => fmtM(v)} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} width={75} />
               <Tooltip content={<FanTooltip />} />
-              <Area type="monotone" dataKey="p90" fill="url(#p90Fill)" stroke="#22c55e" strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="P90" />
-              <Area type="monotone" dataKey="p75" fill="url(#p75Fill)" stroke="#6366f1" strokeWidth={1} dot={false} name="P75" />
-              <Line type="monotone" dataKey="median" stroke="#eab308" strokeWidth={2.5} dot={false} name="Median" />
-              <Area type="monotone" dataKey="p25" fill="url(#p25Fill)" stroke="#f97316" strokeWidth={1} dot={false} name="P25" />
-              <Area type="monotone" dataKey="p10" fill="url(#p10Fill)" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="P10" />
+              <Area type="monotone" dataKey="p90" fill="url(#p90Fill)" stroke="hsl(var(--v2-pos))" strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="P90" />
+              <Area type="monotone" dataKey="p75" fill="url(#p75Fill)" stroke="hsl(var(--v2-chart-1))" strokeWidth={1} dot={false} name="P75" />
+              <Line type="monotone" dataKey="median" stroke="hsl(var(--v2-chart-3))" strokeWidth={2.5} dot={false} name="Median" />
+              <Area type="monotone" dataKey="p25" fill="url(#p25Fill)" stroke="hsl(var(--v2-chart-4))" strokeWidth={1} dot={false} name="P25" />
+              <Area type="monotone" dataKey="p10" fill="url(#p10Fill)" stroke="hsl(var(--v2-neg))" strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="P10" />
+              {/* Signature moment 1: end-of-series annotation on the median terminal value.
+                  Mirrors the v2 spec — calm, single label, no glow, no extra chrome.
+                  Recharts 3.x typing for ReferenceDot is over-strict; we widen via `any`. */}
+              {fanData.length > 0 && (() => {
+                const last = fanData[fanData.length - 1] as { year: number; median: number };
+                const first = fanData[0] as { median: number };
+                const delta = (last.median ?? 0) - (first?.median ?? 0);
+                const sign = delta >= 0 ? '▲' : '▼';
+                const deltaTxt = `${sign} ${delta >= 0 ? '+' : ''}${fmtM(delta)}`;
+                const baseTxt = `→ Median ${fmtM(last.median ?? 0)}`;
+                const RD: any = ReferenceDot;
+                return (
+                  <>
+                    <RD
+                      x={last.year}
+                      y={last.median}
+                      r={3.5}
+                      fill="hsl(var(--v2-chart-3))"
+                      stroke="hsl(var(--background))"
+                      strokeWidth={1.5}
+                      isFront
+                    />
+                    <RD
+                      x={last.year}
+                      y={last.median}
+                      r={0}
+                      isFront
+                      label={{
+                        value: baseTxt,
+                        position: 'right',
+                        offset: 12,
+                        fill: 'hsl(var(--foreground))',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        style: { fontFamily: "var(--font-serif, 'Source Serif 4', Georgia, serif)" },
+                      }}
+                    />
+                    <RD
+                      x={last.year}
+                      y={last.median}
+                      r={0}
+                      isFront
+                      label={{
+                        value: deltaTxt,
+                        position: 'right',
+                        offset: 12,
+                        dy: 14,
+                        fill: delta >= 0 ? 'hsl(var(--v2-pos))' : 'hsl(var(--v2-neg))',
+                        fontSize: 10,
+                        fontWeight: 500,
+                      }}
+                    />
+                  </>
+                );
+              })()}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
