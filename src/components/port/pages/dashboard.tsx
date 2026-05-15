@@ -49,6 +49,7 @@ import {
 } from "@/lib/finance-port/dashboardDataContract";
 import { maskValue } from "@/components/port/PrivacyMask";
 import SaveButton, { useSaveOnEnter } from "@/components/port/SaveButton";
+import { V2Sparkline } from "@/components/ui/v2";
 import { useState, useMemo, useCallback, useRef, useEffect, Fragment } from "react";
 import {
   AreaChart,
@@ -1903,14 +1904,27 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right — Net worth + controls */}
-          <div className="rounded-2xl border border-border bg-card p-5 flex flex-col justify-between min-w-[260px]">
+          {/* Right — Net worth + controls.
+              FWL Hybrid V2 — signature moment 3 lives here: a 60x14 slate
+              sparkline of the 10-year base-case net worth projection sits
+              inline to the right of the Source Serif hero number. */}
+          <div className="v2-card p-5 flex flex-col justify-between min-w-[260px]">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Estimated Net Worth</div>
-              <div className="text-4xl font-extrabold text-amber-400 tabular-nums leading-none mb-1">
-                {maskValue(formatCurrency(netWorth, true), privacyMode)}
+              <div className="v2-eyebrow mb-1.5">Estimated Net Worth</div>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="v2-num-display">
+                  {maskValue(formatCurrency(netWorth, true), privacyMode)}
+                </span>
+                {!privacyMode && projection.length > 1 ? (
+                  <V2Sparkline
+                    data={projection.slice(0, 10).map((p: any) => Number(p.endNetWorth) || 0)}
+                    width={60}
+                    height={14}
+                    filled
+                  />
+                ) : null}
               </div>
-              <div className="text-xs text-muted-foreground">Brisbane, QLD · AUD</div>
+              <div className="text-[11px] text-v2-text-muted">Brisbane, QLD · AUD</div>
             </div>
             <div className="flex gap-2 mt-3">
               <button
@@ -2112,20 +2126,22 @@ export default function DashboardPage() {
       <div className="px-4 pt-4 pb-2 db-section-keycards">
         {/* 3 wealth split cards */}
         <div className="grid grid-cols-3 gap-3 mb-3">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Accessible Wealth</div>
-            <div className="text-xl font-bold text-foreground tabular-nums">{maskValue(formatCurrency(accessibleNW, true), privacyMode)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Available now ex-super</div>
+          {/* FWL Hybrid V2 — the three-up wealth strip uses v2 surface tokens
+              + restrained slate/sage instead of neon emerald/amber. */}
+          <div className="v2-card p-4">
+            <div className="v2-eyebrow mb-1">Accessible Wealth</div>
+            <div className="text-[22px] font-medium text-v2-text-strong tabular-nums tracking-tight">{maskValue(formatCurrency(accessibleNW, true), privacyMode)}</div>
+            <div className="text-[11px] text-v2-text-muted mt-0.5">Available now ex-super</div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Locked Retirement Wealth</div>
-            <div className="text-xl font-bold text-amber-400 tabular-nums">{maskValue(formatCurrency(lockedNW, true), privacyMode)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Superannuation — access at 60</div>
+          <div className="v2-card p-4">
+            <div className="v2-eyebrow mb-1">Locked Retirement Wealth</div>
+            <div className="text-[22px] font-medium text-v2-warn tabular-nums tracking-tight">{maskValue(formatCurrency(lockedNW, true), privacyMode)}</div>
+            <div className="text-[11px] text-v2-text-muted mt-0.5">Superannuation — access at 60</div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total Net Worth</div>
-            <div className="text-xl font-bold text-emerald-400 tabular-nums">{maskValue(formatCurrency(netWorth, true), privacyMode)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Accessible + Super combined</div>
+          <div className="v2-card p-4">
+            <div className="v2-eyebrow mb-1">Total Net Worth</div>
+            <div className="text-[22px] font-medium text-v2-pos tabular-nums tracking-tight">{maskValue(formatCurrency(netWorth, true), privacyMode)}</div>
+            <div className="text-[11px] text-v2-text-muted mt-0.5">Accessible + Super combined</div>
           </div>
         </div>
 
@@ -2847,9 +2863,11 @@ export default function DashboardPage() {
                       <YAxis yAxisId="nw" orientation="left" tickFormatter={(v) => `$${(v/1000000).toFixed(1)}M`} tick={{ fontSize: 9, fill: "hsl(215,12%,38%)" }} axisLine={false} tickLine={false} width={50} />
                       <YAxis yAxisId="debt" orientation="right" tickFormatter={(v) => `$${(v/1000000).toFixed(1)}M`} tick={{ fontSize: 9, fill: "hsl(215,12%,38%)" }} axisLine={false} tickLine={false} width={44} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Bar yAxisId="debt" dataKey="liabilities" name="Debt" fill="hsl(0,65%,50%)" fillOpacity={0.45} radius={[2,2,0,0]} maxBarSize={20} />
-                      <Area yAxisId="nw" type="monotone" dataKey="assets" name="Total Assets" stroke="hsl(142,55%,42%)" strokeWidth={1.5} fill="url(#wdcAssetGrad)" dot={false} />
-                      <Area yAxisId="nw" type="monotone" dataKey="netWorth" name="Net Worth" stroke="hsl(210,75%,60%)" strokeWidth={2.5} fill="url(#wdcNWGrad)" dot={false} activeDot={{ r: 5, fill: "hsl(210,75%,60%)", strokeWidth: 0 }} />
+                      {/* FWL Hybrid V2 — chart palette swap: debt = clay (chart-4),
+                          assets = sage (chart-2), net worth = slate (chart-1). */}
+                      <Bar yAxisId="debt" dataKey="liabilities" name="Debt" fill="hsl(var(--v2-chart-4))" fillOpacity={0.45} radius={[2,2,0,0]} maxBarSize={20} />
+                      <Area yAxisId="nw" type="monotone" dataKey="assets" name="Total Assets" stroke="hsl(var(--v2-chart-2))" strokeWidth={1.5} fill="url(#wdcAssetGrad)" dot={false} />
+                      <Area yAxisId="nw" type="monotone" dataKey="netWorth" name="Net Worth" stroke="hsl(var(--v2-chart-1))" strokeWidth={2.5} fill="url(#wdcNWGrad)" dot={false} activeDot={{ r: 5, fill: "hsl(var(--v2-chart-1))", strokeWidth: 0 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>

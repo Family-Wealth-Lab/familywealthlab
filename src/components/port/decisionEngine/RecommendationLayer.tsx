@@ -132,15 +132,26 @@ export function ConditionalRecsList({ recommendations, fmt }: ConditionalRecsLis
       </div>
 
       <div className="space-y-2">
-        {sorted.map(rec => (
-          <RecTile key={rec.id} rec={rec} fmt={fmt} />
+        {sorted.map((rec, idx) => (
+          <RecTile key={rec.id} rec={rec} fmt={fmt} isTop={idx === 0} />
         ))}
       </div>
     </div>
   );
 }
 
-function RecTile({ rec, fmt }: { rec: ConditionalRecommendation; fmt: MaskFmt }) {
+function RecTile({
+  rec,
+  fmt,
+  isTop = false,
+}: {
+  rec: ConditionalRecommendation;
+  fmt: MaskFmt;
+  /** FWL Hybrid V2 — signature moment 2: italic sage `.why` is allowed
+   *  on the top decision card only. Suppressed everywhere else so the
+   *  signature stays rare and earns its weight. */
+  isTop?: boolean;
+}) {
   const tone = {
     critical: "border-rose-200 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20",
     warn: "border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20",
@@ -184,7 +195,15 @@ function RecTile({ rec, fmt }: { rec: ConditionalRecommendation; fmt: MaskFmt })
         </div>
         <div className="pt-1 mt-1 border-t border-border/60">
           <span className="text-[9px] uppercase tracking-wide font-semibold text-muted-foreground">Why</span>
-          <div className="text-muted-foreground leading-snug">{fmt.sentence(rec.rationale)}</div>
+          <div
+            className={
+              isTop
+                ? "v2-decision-why leading-snug"
+                : "text-muted-foreground leading-snug"
+            }
+          >
+            {fmt.sentence(rec.rationale)}
+          </div>
         </div>
       </div>
     </div>
